@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "673668549384",
+    "project_id": "maniadochopp",
+    "storage_bucket": "maniadochopp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:673668549384:android:cf6e65e54e23d4bddf7abd",
+        "android_client_info": {
+          "package_name": "com.example.flutter_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAi7CX-gO5ixc7UYqeO_BqrznWVuq5-FSQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
