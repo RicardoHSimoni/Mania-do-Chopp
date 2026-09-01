@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import 'firebase_options.dart';
-import 'screens/clientes/cliente_form_screen.dart';
+import 'screens/home/home_screen.dart';
+import 'screens/orcamentos/orcamento_form_screen.dart';
+import 'screens/orcamentos/orcamentos_screen.dart';
+import 'screens/clientes/cliente_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,7 +24,13 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: ClienteFormScreen(),
+      home: HomeScreen(),
+      routes: {
+        '/orcamentos/orcamento_form_screen': (context) =>
+            const OrcamentoFormScreen(),
+        '/orcamentos/orcamentos_screen': (context) => const OrcamentosScreen(),
+        '/clientes/clientes_screen': (context) => const ClienteScreen(),
+      },
     );
   }
 }
