@@ -51,7 +51,15 @@ class HomeScreen extends StatelessWidget {
                 title: const Text('Clientes'),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.pushNamed(context, '/clientes/clientes_screen');
+                  Navigator.pushNamed(context, '/clientes/cliente_screen');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.shopping_cart_outlined),
+                title: const Text('Produtos'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/produtos/produto_screen');
                 },
               ),
             ],

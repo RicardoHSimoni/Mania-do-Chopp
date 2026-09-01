@@ -6,6 +6,8 @@ import 'screens/home/home_screen.dart';
 import 'screens/orcamentos/orcamento_form_screen.dart';
 import 'screens/orcamentos/orcamentos_screen.dart';
 import 'screens/clientes/cliente_screen.dart';
+import 'screens/produtos/produto_screen.dart';
+import 'screens/produtos/produto_form_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,7 +31,9 @@ class MyApp extends StatelessWidget {
         '/orcamentos/orcamento_form_screen': (context) =>
             const OrcamentoFormScreen(),
         '/orcamentos/orcamentos_screen': (context) => const OrcamentosScreen(),
-        '/clientes/clientes_screen': (context) => const ClienteScreen(),
+        '/clientes/cliente_screen': (context) => const ClienteScreen(),
+        '/produtos/produto_screen': (context) => const ProdutoScreen(),
+        '/produtos/produto_form_screen': (context) => const ProdutoFormScreen(),
       },
     );
   }
