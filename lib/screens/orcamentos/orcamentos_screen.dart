@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_app/models/cliente.dart';
 
 import '../../models/orcamento.dart';
 import '../../services/orcamento_service.dart';
+import '../../services/cliente_service.dart';
 
 class OrcamentosScreen extends StatefulWidget {
   const OrcamentosScreen({super.key});
@@ -13,10 +15,13 @@ class OrcamentosScreen extends StatefulWidget {
 class _OrcamentosScreenState extends State<OrcamentosScreen> {
   late OrcamentoService _orcamentoService;
 
+  late ClienteService _clienteService;
+
   @override
   void initState() {
     super.initState();
     _orcamentoService = OrcamentoService();
+    _clienteService = ClienteService();
   }
 
   Future<void> _excluirOrcamento(
@@ -96,12 +101,10 @@ class _OrcamentosScreenState extends State<OrcamentosScreen> {
                       ],
                     ),
                     const Divider(height: 24),
-                    if (orcamento.cliente != null) ...[
-                      _construirDetalhe('Cliente', orcamento.cliente!.nome),
-                      _construirDetalhe('Email', orcamento.cliente!.email),
+                    if (orcamento.clienteId != null) ...[
                       _construirDetalhe(
-                        'Telefone',
-                        orcamento.cliente!.telefone,
+                        'ID do Cliente',
+                        orcamento.clienteId ?? '',
                       ),
                       const SizedBox(height: 16),
                     ],
@@ -114,7 +117,7 @@ class _OrcamentosScreenState extends State<OrcamentosScreen> {
                     ),
                     const SizedBox(height: 8),
                     ...orcamento.produtos.asMap().entries.map((entry) {
-                      final produto = entry.value;
+                      final item = entry.value;
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12.0),
                         child: Row(
@@ -125,13 +128,13 @@ class _OrcamentosScreenState extends State<OrcamentosScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    produto.nome,
+                                    item.nomeProduto,
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                   Text(
-                                    'R\$ ${produto.preco.toStringAsFixed(2)}',
+                                    'Qtd: ${item.quantidade} x R\$ ${item.valorUnitario.toStringAsFixed(2)}',
                                     style: const TextStyle(
                                       fontSize: 12,
                                       color: Colors.grey,
@@ -140,15 +143,32 @@ class _OrcamentosScreenState extends State<OrcamentosScreen> {
                                 ],
                               ),
                             ),
+                            Text(
+                              'R\$ ${item.valorTotal.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ],
                         ),
                       );
                     }).toList(),
+                    if (orcamento.desconto > 0) ...[
+                      const Divider(height: 24),
+                      _construirDetalhe(
+                        'Desconto',
+                        '- R\$ ${orcamento.desconto.toStringAsFixed(2)}',
+                      ),
+                    ],
                     const Divider(height: 24),
                     _construirDetalhe(
                       'Total',
                       'R\$ ${orcamento.valorTotal.toStringAsFixed(2)}',
                     ),
+                    if (orcamento.observacao != null) ...[
+                      const SizedBox(height: 16),
+                      _construirDetalhe('Observação', orcamento.observacao!),
+                    ],
                     const SizedBox(height: 24),
                     Row(
                       children: [
@@ -171,7 +191,7 @@ class _OrcamentosScreenState extends State<OrcamentosScreen> {
                           child: ElevatedButton.icon(
                             onPressed: () {
                               Navigator.pop(context);
-                              _excluirOrcamento(context, orcamento.id!);
+                              _excluirOrcamento(context, orcamento.id);
                             },
                             icon: const Icon(Icons.delete),
                             label: const Text('Excluir'),
@@ -237,7 +257,7 @@ class _OrcamentosScreenState extends State<OrcamentosScreen> {
           if (snapshot.hasError) {
             return Center(
               child: Text(
-                'Erro ao carregar orçamentos: ${snapshot.error}',
+                'Erro ao carregar orçamentos: ${snapshot.error?.toString() ?? 'Erro desconhecido'}',
                 textAlign: TextAlign.center,
               ),
             );
@@ -258,12 +278,31 @@ class _OrcamentosScreenState extends State<OrcamentosScreen> {
               return Card(
                 child: ListTile(
                   leading: const CircleAvatar(child: Icon(Icons.receipt_long)),
-                  title: Text(
-                    orcamento.cliente?.nome ?? 'Sem cliente',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  title: FutureBuilder<Cliente?>(
+                    future: _clienteService.buscarCliente(
+                      orcamento.clienteId ?? '',
+                    ),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Text('Carregando...');
+                      }
+
+                      if (snapshot.hasError) {
+                        return const Text('Erro ao carregar cliente');
+                      }
+
+                      final cliente = snapshot.data;
+
+                      return Text(
+                        cliente?.nome ?? 'Cliente não encontrado',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      );
+                    },
                   ),
-                  subtitle: Text('${orcamento.produtos.length} produto(s)'),
+                  subtitle: Text(
+                    '${_orcamentoService.getQuantidadeTotal(orcamento.produtos)} produto(s)',
+                  ),
                   trailing: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.end,

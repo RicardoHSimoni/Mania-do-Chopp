@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_app/models/orcamento_item.dart';
 
 import '../models/orcamento.dart';
 
@@ -16,12 +17,16 @@ class OrcamentoService {
   Stream<List<Orcamento>> listarOrcamentos() {
     return _firestore
         .collection(_collection)
-        .orderBy('valorTotal')
+        .orderBy('dataCriacao', descending: true)
         .snapshots()
         .map((snapshot) {
           return snapshot.docs.map((doc) {
             return Orcamento.fromMap(doc.data(), doc.id);
           }).toList();
+        })
+        .handleError((error) {
+          print('Erro ao listar orçamentos: $error');
+          return <Orcamento>[];
         });
   }
 
@@ -47,5 +52,9 @@ class OrcamentoService {
   // Excluir orçamento
   Future<void> excluirOrcamento(String id) async {
     await _firestore.collection(_collection).doc(id).delete();
+  }
+
+  int getQuantidadeTotal(List<OrcamentoItem> itens) {
+    return itens.fold(0, (total, item) => total + item.quantidade);
   }
 }

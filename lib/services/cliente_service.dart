@@ -20,10 +20,10 @@ class ClienteService {
         .limit(10)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        return Cliente.fromMap(doc.data(), doc.id);
-      }).toList();
-    });
+          return snapshot.docs.map((doc) {
+            return Cliente.fromMap(doc.data(), doc.id);
+          }).toList();
+        });
   }
 
   // Buscar um cliente pelo ID
@@ -39,10 +39,6 @@ class ClienteService {
 
   // Atualizar cliente
   Future<void> atualizarCliente(Cliente cliente) async {
-    if (cliente.id == null) {
-      throw Exception('Cliente não possui ID.');
-    }
-
     await _firestore
         .collection(_collection)
         .doc(cliente.id)
@@ -52,5 +48,15 @@ class ClienteService {
   // Excluir cliente
   Future<void> excluirCliente(String id) async {
     await _firestore.collection(_collection).doc(id).delete();
+  }
+
+  Future<String> getNomeClienteById(String clienteId) async {
+    final cliente = await buscarCliente(clienteId);
+
+    if (cliente == null) {
+      return 'Cliente não encontrado';
+    }
+
+    return cliente.nome;
   }
 }

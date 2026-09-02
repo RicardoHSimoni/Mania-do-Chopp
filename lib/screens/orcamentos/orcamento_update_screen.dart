@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../../models/orcamento.dart';
-import '../../models/produto.dart';
+import '../../models/orcamento_item.dart';
 import '../../services/orcamento_service.dart';
 
 class OrcamentoUpdateScreen extends StatefulWidget {
   final Orcamento orcamento;
 
-  const OrcamentoUpdateScreen({
-    super.key,
-    required this.orcamento,
-  });
+  const OrcamentoUpdateScreen({super.key, required this.orcamento});
 
   @override
   State<OrcamentoUpdateScreen> createState() => _OrcamentoUpdateScreenState();
@@ -18,27 +15,29 @@ class OrcamentoUpdateScreen extends StatefulWidget {
 
 class _OrcamentoUpdateScreenState extends State<OrcamentoUpdateScreen> {
   late OrcamentoService _orcamentoService;
-  late List<Map<String, dynamic>> _produtos;
+  late List<OrcamentoItem> _produtos;
+  final TextEditingController _descontoController = TextEditingController();
+  final TextEditingController _observacaoController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _orcamentoService = OrcamentoService();
-    _produtos = widget.orcamento.produtos
-        .map((p) => {
-              'id': p.id,
-              'name': p.nome,
-              'price': p.preco,
-              'quantity': 1,
-            })
-        .toList();
+    _produtos = List.from(widget.orcamento.produtos);
+    _descontoController.text = widget.orcamento.desconto.toString();
+    _observacaoController.text = widget.orcamento.observacao ?? '';
   }
 
   double get totalValue {
-    return _produtos.fold(
-      0,
-      (sum, product) => sum + (product['price'] * product['quantity']),
-    );
+    return _produtos.fold(0, (sum, product) => sum + product.valorTotal);
+  }
+
+  double get descontoTotal {
+    return double.tryParse(_descontoController.text) ?? 0;
+  }
+
+  double get valorFinal {
+    return (totalValue - descontoTotal).clamp(0, double.infinity);
   }
 
   void removeProduct(int index) {
@@ -50,7 +49,15 @@ class _OrcamentoUpdateScreenState extends State<OrcamentoUpdateScreen> {
   void updateQuantity(int index, int newQuantity) {
     setState(() {
       if (newQuantity > 0) {
-        _produtos[index]['quantity'] = newQuantity;
+        final item = _produtos[index];
+        _produtos[index] = OrcamentoItem(
+          id: item.id,
+          produtoId: item.produtoId,
+          nomeProduto: item.nomeProduto,
+          valorUnitario: item.valorUnitario,
+          quantidade: newQuantity,
+          desconto: item.desconto,
+        );
       } else {
         removeProduct(index);
       }
@@ -66,22 +73,16 @@ class _OrcamentoUpdateScreenState extends State<OrcamentoUpdateScreen> {
     }
 
     try {
-      final produtosAtualizados = _produtos.map((p) {
-        return Produto(
-          id: p['id'],
-          nome: p['name'],
-          preco: p['price'],
-          tipo: widget.orcamento.produtos
-              .firstWhere((prod) => prod.id == p['id'])
-              .tipo,
-        );
-      }).toList();
-
       final orcamentoAtualizado = Orcamento(
         id: widget.orcamento.id,
-        cliente: widget.orcamento.cliente,
-        produtos: produtosAtualizados,
-        valorTotal: totalValue,
+        clienteId: widget.orcamento.clienteId,
+        produtos: _produtos,
+        valorTotal: valorFinal,
+        dataCriacao: widget.orcamento.dataCriacao,
+        desconto: descontoTotal,
+        observacao: _observacaoController.text.isEmpty
+            ? null
+            : _observacaoController.text,
       );
 
       await _orcamentoService.atualizarOrcamento(orcamentoAtualizado);
@@ -94,11 +95,17 @@ class _OrcamentoUpdateScreenState extends State<OrcamentoUpdateScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao atualizar: $e')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Erro ao atualizar: $e')));
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _descontoController.dispose();
+    _observacaoController.dispose();
+    super.dispose();
   }
 
   @override
@@ -110,7 +117,7 @@ class _OrcamentoUpdateScreenState extends State<OrcamentoUpdateScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (widget.orcamento.cliente != null) ...[
+            if (widget.orcamento.clienteId != null) ...[
               const Text(
                 'Cliente',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
@@ -122,7 +129,7 @@ class _OrcamentoUpdateScreenState extends State<OrcamentoUpdateScreen> {
                   border: Border.all(color: Colors.grey.shade300),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(widget.orcamento.cliente!.nome),
+                child: Text(widget.orcamento.clienteId!),
               ),
               const SizedBox(height: 24),
             ],
@@ -143,7 +150,7 @@ class _OrcamentoUpdateScreenState extends State<OrcamentoUpdateScreen> {
                 separatorBuilder: (context, index) =>
                     Divider(height: 1, color: Colors.grey.shade300),
                 itemBuilder: (context, index) {
-                  final product = _produtos[index];
+                  final item = _produtos[index];
                   return Padding(
                     padding: const EdgeInsets.all(12.0),
                     child: Row(
@@ -154,13 +161,13 @@ class _OrcamentoUpdateScreenState extends State<OrcamentoUpdateScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                product['name'],
+                                item.nomeProduto,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                               Text(
-                                'R\$ ${product['price'].toStringAsFixed(2)}',
+                                'R\$ ${item.valorUnitario.toStringAsFixed(2)}',
                                 style: TextStyle(
                                   color: Colors.grey.shade600,
                                   fontSize: 12,
@@ -173,10 +180,8 @@ class _OrcamentoUpdateScreenState extends State<OrcamentoUpdateScreen> {
                           children: [
                             IconButton(
                               icon: const Icon(Icons.remove),
-                              onPressed: () => updateQuantity(
-                                index,
-                                product['quantity'] - 1,
-                              ),
+                              onPressed: () =>
+                                  updateQuantity(index, item.quantidade - 1),
                               constraints: const BoxConstraints(
                                 minWidth: 36,
                                 minHeight: 36,
@@ -186,7 +191,7 @@ class _OrcamentoUpdateScreenState extends State<OrcamentoUpdateScreen> {
                             SizedBox(
                               width: 40,
                               child: Text(
-                                '${product['quantity']}',
+                                '${item.quantidade}',
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w600,
@@ -195,10 +200,8 @@ class _OrcamentoUpdateScreenState extends State<OrcamentoUpdateScreen> {
                             ),
                             IconButton(
                               icon: const Icon(Icons.add),
-                              onPressed: () => updateQuantity(
-                                index,
-                                product['quantity'] + 1,
-                              ),
+                              onPressed: () =>
+                                  updateQuantity(index, item.quantidade + 1),
                               constraints: const BoxConstraints(
                                 minWidth: 36,
                                 minHeight: 36,
@@ -206,10 +209,7 @@ class _OrcamentoUpdateScreenState extends State<OrcamentoUpdateScreen> {
                               padding: EdgeInsets.zero,
                             ),
                             IconButton(
-                              icon: const Icon(
-                                Icons.delete,
-                                color: Colors.red,
-                              ),
+                              icon: const Icon(Icons.delete, color: Colors.red),
                               onPressed: () => removeProduct(index),
                               constraints: const BoxConstraints(
                                 minWidth: 36,
@@ -222,17 +222,59 @@ class _OrcamentoUpdateScreenState extends State<OrcamentoUpdateScreen> {
                         SizedBox(
                           width: 80,
                           child: Text(
-                            'R\$ ${(product['price'] * product['quantity']).toStringAsFixed(2)}',
+                            'R\$ ${item.valorTotal.toStringAsFixed(2)}',
                             textAlign: TextAlign.right,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ),
                       ],
                     ),
                   );
                 },
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Desconto (Opcional)',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _descontoController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                hintText: '0.00',
+                prefixText: 'R\$ ',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 16,
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Observação (Opcional)',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _observacaoController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                hintText: 'Digite uma observação...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -247,18 +289,58 @@ class _OrcamentoUpdateScreenState extends State<OrcamentoUpdateScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Total do Orçamento',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Subtotal:',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                      Text(
+                        'R\$ ${totalValue.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    'R\$ ${totalValue.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Desconto:',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                      Text(
+                        '- R\$ ${descontoTotal.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.red.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Divider(color: Colors.blue.shade200),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Total do Orçamento',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                      Text(
+                        'R\$ ${valorFinal.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

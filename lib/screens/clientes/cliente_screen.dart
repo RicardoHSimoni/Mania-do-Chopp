@@ -42,7 +42,7 @@ class _ClienteScreenState extends State<ClienteScreen> {
 
     if (confirmacao == true && mounted) {
       try {
-        await _clienteService.excluirCliente(cliente.id!);
+        await _clienteService.excluirCliente(cliente.id);
         if (mounted) {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(

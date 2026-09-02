@@ -50,7 +50,15 @@ class MyApp extends StatelessWidget {
           return OrcamentoUpdateScreen(
             orcamento:
                 orcamento ??
-                Orcamento(id: '', cliente: null, produtos: [], valorTotal: 0.0),
+                Orcamento(
+                  id: '',
+                  clienteId: null,
+                  produtos: [],
+                  valorTotal: 0.0,
+                  dataCriacao: DateTime.now(),
+                  desconto: 0,
+                  observacao: null,
+                ),
           );
         },
 
