@@ -57,8 +57,6 @@ class MyApp extends StatelessWidget {
                   email: '',
                   telefone: '',
                   endereco: '',
-                  numero: '',
-                  bairro: '',
                 ),
           );
         },

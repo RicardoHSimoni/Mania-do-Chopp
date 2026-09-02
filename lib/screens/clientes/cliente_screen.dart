@@ -123,8 +123,6 @@ class _ClienteScreenState extends State<ClienteScreen> {
                     _construirDetalhe('Email', cliente.email),
                     _construirDetalhe('Telefone', cliente.telefone),
                     _construirDetalhe('Endereço', cliente.endereco),
-                    _construirDetalhe('Número', cliente.numero),
-                    _construirDetalhe('Bairro', cliente.bairro),
                     if (cliente.observacao != null &&
                         cliente.observacao!.isNotEmpty)
                       _construirDetalhe('Observação', cliente.observacao!),

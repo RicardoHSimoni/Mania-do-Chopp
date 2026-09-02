@@ -29,8 +29,6 @@ class _ClienteFormScreenState extends State<ClienteFormScreen> {
       email: _emailController.text,
       telefone: _telefoneController.text,
       endereco: _enderecoController.text,
-      numero: _numeroController.text,
-      bairro: _bairroController.text,
       observacao: _observacaoController.text,
     );
 
@@ -67,16 +65,6 @@ class _ClienteFormScreenState extends State<ClienteFormScreen> {
             TextField(
               controller: _enderecoController,
               decoration: const InputDecoration(labelText: 'Endereço'),
-            ),
-
-            TextField(
-              controller: _numeroController,
-              decoration: const InputDecoration(labelText: 'Número'),
-            ),
-
-            TextField(
-              controller: _bairroController,
-              decoration: const InputDecoration(labelText: 'Bairro'),
             ),
 
             TextField(

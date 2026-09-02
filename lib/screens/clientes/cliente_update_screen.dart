@@ -6,10 +6,7 @@ import '../../services/cliente_service.dart';
 class ClienteUpdateScreen extends StatefulWidget {
   final Cliente cliente;
 
-  const ClienteUpdateScreen({
-    super.key,
-    required this.cliente,
-  });
+  const ClienteUpdateScreen({super.key, required this.cliente});
 
   @override
   State<ClienteUpdateScreen> createState() => _ClienteUpdateScreenState();
@@ -35,9 +32,9 @@ class _ClienteUpdateScreenState extends State<ClienteUpdateScreen> {
     _emailController = TextEditingController(text: widget.cliente.email);
     _telefoneController = TextEditingController(text: widget.cliente.telefone);
     _enderecoController = TextEditingController(text: widget.cliente.endereco);
-    _numeroController = TextEditingController(text: widget.cliente.numero);
-    _bairroController = TextEditingController(text: widget.cliente.bairro);
-    _observacaoController = TextEditingController(text: widget.cliente.observacao ?? '');
+    _observacaoController = TextEditingController(
+      text: widget.cliente.observacao ?? '',
+    );
   }
 
   @override
@@ -45,8 +42,6 @@ class _ClienteUpdateScreenState extends State<ClienteUpdateScreen> {
     _nomeController.dispose();
     _telefoneController.dispose();
     _enderecoController.dispose();
-    _numeroController.dispose();
-    _bairroController.dispose();
     _observacaoController.dispose();
     _cpfController.dispose();
     _emailController.dispose();
@@ -61,8 +56,6 @@ class _ClienteUpdateScreenState extends State<ClienteUpdateScreen> {
       email: _emailController.text,
       telefone: _telefoneController.text,
       endereco: _enderecoController.text,
-      numero: _numeroController.text,
-      bairro: _bairroController.text,
       observacao: _observacaoController.text,
     );
 
@@ -77,9 +70,8 @@ class _ClienteUpdateScreenState extends State<ClienteUpdateScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao atualizar: $e')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Erro ao atualizar: $e')));
       }
     }
   }
@@ -116,16 +108,6 @@ class _ClienteUpdateScreenState extends State<ClienteUpdateScreen> {
               TextField(
                 controller: _enderecoController,
                 decoration: const InputDecoration(labelText: 'Endereço'),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _numeroController,
-                decoration: const InputDecoration(labelText: 'Número'),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _bairroController,
-                decoration: const InputDecoration(labelText: 'Bairro'),
               ),
               const SizedBox(height: 16),
               TextField(

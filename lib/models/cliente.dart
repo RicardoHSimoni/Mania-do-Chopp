@@ -5,8 +5,6 @@ class Cliente {
   final String email;
   final String telefone;
   final String endereco;
-  final String numero;
-  final String bairro;
   final String? observacao;
 
   Cliente({
@@ -16,8 +14,6 @@ class Cliente {
     required this.email,
     required this.telefone,
     required this.endereco,
-    required this.numero,
-    required this.bairro,
     this.observacao,
   });
 
@@ -28,8 +24,6 @@ class Cliente {
       'email': email,
       'telefone': telefone,
       'endereco': endereco,
-      'numero': numero,
-      'bairro': bairro,
       'observacao': observacao,
     };
   }
@@ -42,8 +36,6 @@ class Cliente {
       email: map['email'] ?? '',
       telefone: map['telefone'] ?? '',
       endereco: map['endereco'] ?? '',
-      numero: map['numero'] ?? '',
-      bairro: map['bairro'] ?? '',
       observacao: map['observacao'],
     );
   }
