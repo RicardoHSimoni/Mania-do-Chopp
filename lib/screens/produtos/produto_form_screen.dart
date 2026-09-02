@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+
 import '../../models/produto.dart';
 import '../../models/tipo_produto.dart';
+import '../../services/produto_service.dart';
 
 class ProdutoFormScreen extends StatefulWidget {
   final Produto? produto;
@@ -17,12 +19,15 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
   TipoProduto? _tipoSelecionado;
   final _formKey = GlobalKey<FormState>();
 
+  final ProdutoService _produtoService = ProdutoService();
+
   @override
   void initState() {
     super.initState();
     _nomeController = TextEditingController(text: widget.produto?.nome ?? '');
-    _precoController =
-        TextEditingController(text: widget.produto?.preco.toString() ?? '');
+    _precoController = TextEditingController(
+      text: widget.produto?.preco.toString() ?? '',
+    );
     _tipoSelecionado = widget.produto?.tipo;
   }
 
@@ -33,14 +38,20 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
     super.dispose();
   }
 
-  void _salvarProduto() {
+  void _salvarProduto() async {
     if (_formKey.currentState!.validate() && _tipoSelecionado != null) {
       final nome = _nomeController.text;
       final preco = double.parse(_precoController.text);
       final tipo = _tipoSelecionado!;
 
-      // Aqui você pode adicionar a lógica para salvar o produto
-      // Por exemplo, chamar um provedor ou um serviço
+      final novoProduto = Produto(
+        id: widget.produto?.id ?? '', // Use o ID existente ou um novo
+        nome: nome,
+        preco: preco,
+        tipo: tipo,
+      );
+
+      await _produtoService.adicionarProduto(novoProduto);
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Produto salvo com sucesso!')),
@@ -87,8 +98,9 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                   border: OutlineInputBorder(),
                   prefixText: 'R\$ ',
                 ),
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Por favor, insira o preço';
@@ -129,10 +141,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                 onPressed: _salvarProduto,
                 child: const Padding(
                   padding: EdgeInsets.all(12.0),
-                  child: Text(
-                    'Salvar Produto',
-                    style: TextStyle(fontSize: 16),
-                  ),
+                  child: Text('Salvar Produto', style: TextStyle(fontSize: 16)),
                 ),
               ),
             ],

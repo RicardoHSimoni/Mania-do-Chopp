@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import 'models/cliente.dart';
+import 'models/produto.dart';
+import 'models/tipo_produto.dart';
 
 import 'firebase_options.dart';
 
@@ -16,6 +18,7 @@ import 'screens/clientes/cliente_update_screen.dart';
 
 import 'screens/produtos/produto_screen.dart';
 import 'screens/produtos/produto_form_screen.dart';
+import 'screens/produtos/produto_update_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -61,6 +64,15 @@ class MyApp extends StatelessWidget {
         },
         '/produtos/produto_screen': (context) => const ProdutoScreen(),
         '/produtos/produto_form_screen': (context) => const ProdutoFormScreen(),
+        '/produtos/produto_update_screen': (context) {
+          final produto =
+              ModalRoute.of(context)?.settings.arguments as Produto?;
+          return ProdutoUpdateScreen(
+            produto:
+                produto ??
+                Produto(id: '', nome: '', tipo: TipoProduto.outro, preco: 0.0),
+          );
+        },
       },
     );
   }
