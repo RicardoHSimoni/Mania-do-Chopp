@@ -1,5 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../../models/cliente.dart';
+import '../../models/produto.dart';
+import '../../models/tipo_produto.dart';
+import '../../services/cliente_service.dart';
+import '../../services/produto_service.dart';
+import '../../models/orcamento.dart';
+import '../../services/orcamento_service.dart';
+
 class OrcamentoFormScreen extends StatefulWidget {
   const OrcamentoFormScreen({Key? key}) : super(key: key);
 
@@ -8,24 +16,32 @@ class OrcamentoFormScreen extends StatefulWidget {
 }
 
 class _OrcamentoFormScreenState extends State<OrcamentoFormScreen> {
-  String? selectedClient;
+  late ClienteService _clienteService;
+  late ProdutoService _produtoService;
+  late OrcamentoService _orcamentoService;
+
+  Cliente? selectedClient;
   final List<Map<String, dynamic>> products = [];
-  final List<String> clients = ['Cliente 1', 'Cliente 2', 'Cliente 3', 'Cliente 4'];
-  final List<String> availableProducts = [
-    'Chopp Premium - R\$ 50.00',
-    'Chopp Especial - R\$ 45.00',
-    'Chopp Tradicional - R\$ 40.00',
-    'Refrigerante - R\$ 15.00',
-  ];
 
   double get totalValue {
-    return products.fold(0, (sum, product) => sum + (product['price'] * product['quantity']));
+    return products.fold(
+      0,
+      (sum, product) => sum + (product['price'] * product['quantity']),
+    );
   }
 
-  void addProduct(String productName, double price) {
+  @override
+  void initState() {
+    super.initState();
+    _clienteService = ClienteService();
+    _produtoService = ProdutoService();
+    _orcamentoService = OrcamentoService();
+  }
+
+  void addProduct(Produto produto) {
     setState(() {
       final existingProduct = products.firstWhere(
-        (p) => p['name'] == productName,
+        (p) => p['id'] == produto.id,
         orElse: () => {},
       );
 
@@ -33,8 +49,9 @@ class _OrcamentoFormScreenState extends State<OrcamentoFormScreen> {
         existingProduct['quantity']++;
       } else {
         products.add({
-          'name': productName,
-          'price': price,
+          'id': produto.id,
+          'name': produto.nome,
+          'price': produto.preco,
           'quantity': 1,
         });
       }
@@ -57,7 +74,7 @@ class _OrcamentoFormScreenState extends State<OrcamentoFormScreen> {
     });
   }
 
-  void submitOrder() {
+  void submitOrder() async {
     if (products.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Adicione pelo menos um produto')),
@@ -65,27 +82,59 @@ class _OrcamentoFormScreenState extends State<OrcamentoFormScreen> {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Orçamento cadastrado! Cliente: ${selectedClient ?? "Sem cliente"}\nTotal: R\$ ${totalValue.toStringAsFixed(2)}',
-        ),
-      ),
-    );
+    try {
+      // Criar lista de produtos do orçamento
+      final produtosOrcamento = products.map((p) {
+        return Produto(
+          id: p['id'],
+          nome: p['name'],
+          preco: p['price'],
+          tipo: TipoProduto.cerveja, // Você pode melhorar isso depois
+        );
+      }).toList();
 
-    setState(() {
-      selectedClient = null;
-      products.clear();
-    });
+      // Criar objeto Orcamento
+      final orcamento = Orcamento(
+        id: '',
+        cliente: selectedClient,
+        produtos: produtosOrcamento,
+        valorTotal: totalValue,
+      );
+
+      // Salvar no banco de dados
+      await _orcamentoService.adicionarOrcamento(orcamento);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Orçamento cadastrado com sucesso!\nTotal: R\$ ${totalValue.toStringAsFixed(2)}',
+            ),
+          ),
+        );
+
+        // Limpar formulário
+        setState(() {
+          selectedClient = null;
+          products.clear();
+        });
+
+        // Voltar para tela anterior
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao cadastrar orçamento: $e')),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Cadastro de Orçamento'),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('Cadastro de Orçamento'), elevation: 0),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -96,31 +145,45 @@ class _OrcamentoFormScreenState extends State<OrcamentoFormScreen> {
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
-            DropdownButtonFormField<String>(
-              value: selectedClient,
-              items: [
-                const DropdownMenuItem(
-                  value: null,
-                  child: Text('Selecione um cliente'),
-                ),
-                ...clients.map(
-                  (client) => DropdownMenuItem(
-                    value: client,
-                    child: Text(client),
+            StreamBuilder<List<Cliente>>(
+              stream: _clienteService.listarClientes(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                final clientes = snapshot.data ?? [];
+
+                return DropdownButtonFormField<Cliente?>(
+                  initialValue: selectedClient,
+                  items: [
+                    const DropdownMenuItem(
+                      value: null,
+                      child: Text('Selecione um cliente'),
+                    ),
+                    ...clientes.map(
+                      (cliente) => DropdownMenuItem(
+                        value: cliente,
+                        child: Text(cliente.nome),
+                      ),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      selectedClient = value;
+                    });
+                  },
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 16,
+                    ),
                   ),
-                ),
-              ],
-              onChanged: (value) {
-                setState(() {
-                  selectedClient = value;
-                });
+                );
               },
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-              ),
             ),
             const SizedBox(height: 24),
             const Text(
@@ -128,30 +191,47 @@ class _OrcamentoFormScreenState extends State<OrcamentoFormScreen> {
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 12),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: availableProducts.length,
-              itemBuilder: (context, index) {
-                final productInfo = availableProducts[index].split(' - ');
-                final productName = productInfo[0];
-                final priceStr = productInfo[1].replaceAll('R\$ ', '').replaceAll(',', '.');
-                final price = double.parse(priceStr);
+            StreamBuilder<List<Produto>>(
+              stream: _produtoService.listarProdutos(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.add),
-                    label: Text(availableProducts[index]),
-                    onPressed: () => addProduct(productName, price),
-                    style: ElevatedButton.styleFrom(
-                      alignment: Alignment.centerLeft,
-                      padding: const EdgeInsets.all(12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                if (snapshot.hasError) {
+                  return Center(child: Text('Erro: ${snapshot.error}'));
+                }
+
+                final produtos = snapshot.data ?? [];
+
+                if (produtos.isEmpty) {
+                  return const Center(child: Text('Nenhum produto disponível'));
+                }
+
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: produtos.length,
+                  itemBuilder: (context, index) {
+                    final produto = produtos[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.add),
+                        label: Text(
+                          '${produto.nome} - R\$ ${produto.preco.toStringAsFixed(2)}',
+                        ),
+                        onPressed: () => addProduct(produto),
+                        style: ElevatedButton.styleFrom(
+                          alignment: Alignment.centerLeft,
+                          padding: const EdgeInsets.all(12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 );
               },
             ),
@@ -171,10 +251,8 @@ class _OrcamentoFormScreenState extends State<OrcamentoFormScreen> {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: products.length,
-                  separatorBuilder: (context, index) => Divider(
-                    height: 1,
-                    color: Colors.grey.shade300,
-                  ),
+                  separatorBuilder: (context, index) =>
+                      Divider(height: 1, color: Colors.grey.shade300),
                   itemBuilder: (context, index) {
                     final product = products[index];
                     return Padding(
@@ -188,11 +266,16 @@ class _OrcamentoFormScreenState extends State<OrcamentoFormScreen> {
                               children: [
                                 Text(
                                   product['name'],
-                                  style: const TextStyle(fontWeight: FontWeight.w600),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                                 Text(
                                   'R\$ ${product['price'].toStringAsFixed(2)}',
-                                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ],
                             ),
@@ -201,8 +284,14 @@ class _OrcamentoFormScreenState extends State<OrcamentoFormScreen> {
                             children: [
                               IconButton(
                                 icon: const Icon(Icons.remove),
-                                onPressed: () => updateQuantity(index, product['quantity'] - 1),
-                                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                                onPressed: () => updateQuantity(
+                                  index,
+                                  product['quantity'] - 1,
+                                ),
+                                constraints: const BoxConstraints(
+                                  minWidth: 36,
+                                  minHeight: 36,
+                                ),
                                 padding: EdgeInsets.zero,
                               ),
                               SizedBox(
@@ -210,19 +299,33 @@ class _OrcamentoFormScreenState extends State<OrcamentoFormScreen> {
                                 child: Text(
                                   '${product['quantity']}',
                                   textAlign: TextAlign.center,
-                                  style: const TextStyle(fontWeight: FontWeight.w600),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                               IconButton(
                                 icon: const Icon(Icons.add),
-                                onPressed: () => updateQuantity(index, product['quantity'] + 1),
-                                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                                onPressed: () => updateQuantity(
+                                  index,
+                                  product['quantity'] + 1,
+                                ),
+                                constraints: const BoxConstraints(
+                                  minWidth: 36,
+                                  minHeight: 36,
+                                ),
                                 padding: EdgeInsets.zero,
                               ),
                               IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.red,
+                                ),
                                 onPressed: () => removeProduct(index),
-                                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                                constraints: const BoxConstraints(
+                                  minWidth: 36,
+                                  minHeight: 36,
+                                ),
                                 padding: EdgeInsets.zero,
                               ),
                             ],
@@ -232,7 +335,9 @@ class _OrcamentoFormScreenState extends State<OrcamentoFormScreen> {
                             child: Text(
                               'R\$ ${(product['price'] * product['quantity']).toStringAsFixed(2)}',
                               textAlign: TextAlign.right,
-                              style: const TextStyle(fontWeight: FontWeight.w600),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ],

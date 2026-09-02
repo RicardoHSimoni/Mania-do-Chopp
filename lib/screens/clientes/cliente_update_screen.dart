@@ -16,8 +16,6 @@ class _ClienteUpdateScreenState extends State<ClienteUpdateScreen> {
   late TextEditingController _nomeController;
   late TextEditingController _telefoneController;
   late TextEditingController _enderecoController;
-  late TextEditingController _numeroController;
-  late TextEditingController _bairroController;
   late TextEditingController _observacaoController;
   late TextEditingController _cpfController;
   late TextEditingController _emailController;

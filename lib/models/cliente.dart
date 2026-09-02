@@ -1,5 +1,5 @@
 class Cliente {
-  final String? id;
+  final String id;
   final String nome;
   final String cpf;
   final String email;
@@ -8,7 +8,7 @@ class Cliente {
   final String? observacao;
 
   Cliente({
-    this.id,
+    required this.id,
     required this.nome,
     required this.cpf,
     required this.email,
@@ -39,4 +39,12 @@ class Cliente {
       observacao: map['observacao'],
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Cliente && runtimeType == other.runtimeType && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../models/orcamento.dart';
+import '../../services/orcamento_service.dart';
+
 class OrcamentosScreen extends StatefulWidget {
   const OrcamentosScreen({super.key});
 
@@ -8,66 +11,210 @@ class OrcamentosScreen extends StatefulWidget {
 }
 
 class _OrcamentosScreenState extends State<OrcamentosScreen> {
-  final List<_Orcamento> _orcamentos = <_Orcamento>[];
+  late OrcamentoService _orcamentoService;
 
-  Future<void> _criarOrcamento() async {
-    final nomeController = TextEditingController();
-    final valorController = TextEditingController();
+  @override
+  void initState() {
+    super.initState();
+    _orcamentoService = OrcamentoService();
+  }
 
-    final orcamento = await showDialog<_Orcamento>(
+  Future<void> _excluirOrcamento(
+    BuildContext context,
+    String orcamentoId,
+  ) async {
+    final confirmacao = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Novo orçamento'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            TextField(
-              controller: nomeController,
-              autofocus: true,
-              decoration: const InputDecoration(labelText: 'Cliente ou evento'),
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Confirmar exclusão'),
+          content: const Text('Deseja realmente excluir este orçamento?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar'),
             ),
-            TextField(
-              controller: valorController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: const InputDecoration(
-                labelText: 'Valor',
-                prefixText: 'R\$ ',
-              ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Excluir', style: TextStyle(color: Colors.red)),
             ),
           ],
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancelar'),
+        );
+      },
+    );
+
+    if (confirmacao == true && mounted) {
+      try {
+        await _orcamentoService.excluirOrcamento(orcamentoId);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Orçamento excluído com sucesso')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('Erro ao excluir: $e')));
+        }
+      }
+    }
+  }
+
+  void _exibirDetalhes(BuildContext context, Orcamento orcamento) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.7,
+          minChildSize: 0.6,
+          maxChildSize: 0.95,
+          builder: (context, scrollController) {
+            return SingleChildScrollView(
+              controller: scrollController,
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Detalhes do Orçamento',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 24),
+                    if (orcamento.cliente != null) ...[
+                      _construirDetalhe('Cliente', orcamento.cliente!.nome),
+                      _construirDetalhe('Email', orcamento.cliente!.email),
+                      _construirDetalhe(
+                        'Telefone',
+                        orcamento.cliente!.telefone,
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    const Text(
+                      'Produtos',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ...orcamento.produtos.asMap().entries.map((entry) {
+                      final produto = entry.value;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    produto.nome,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    'R\$ ${produto.preco.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    const Divider(height: 24),
+                    _construirDetalhe(
+                      'Total',
+                      'R\$ ${orcamento.valorTotal.toStringAsFixed(2)}',
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              Navigator.pushNamed(
+                                context,
+                                '/orcamentos/orcamento_update_screen',
+                                arguments: orcamento,
+                              );
+                            },
+                            icon: const Icon(Icons.edit),
+                            label: const Text('Editar'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              _excluirOrcamento(context, orcamento.id!);
+                            },
+                            icon: const Icon(Icons.delete),
+                            label: const Text('Excluir'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _construirDetalhe(String label, String valor) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.grey,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-          FilledButton(
-            onPressed: () {
-              final nome = nomeController.text.trim();
-              if (nome.isEmpty) return;
-              final valor =
-                  double.tryParse(
-                    valorController.text.trim().replaceAll(',', '.'),
-                  ) ??
-                  0;
-              Navigator.pop(
-                dialogContext,
-                _Orcamento(nome: nome, valor: valor, data: DateTime.now()),
-              );
-            },
-            child: const Text('Criar'),
+          const SizedBox(height: 8),
+          Text(
+            valor,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
         ],
       ),
     );
-
-    nomeController.dispose();
-    valorController.dispose();
-    if (orcamento != null && mounted) {
-      setState(() => _orcamentos.insert(0, orcamento));
-    }
   }
 
   @override
@@ -80,44 +227,63 @@ class _OrcamentosScreenState extends State<OrcamentosScreen> {
         icon: const Icon(Icons.add),
         label: const Text('Novo orçamento'),
       ),
-      body: _orcamentos.isEmpty
-          ? const Center(child: Text('Nenhum orçamento cadastrado.'))
-          : ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: _orcamentos.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemBuilder: (context, index) {
-                final item = _orcamentos[index];
-                return Card(
-                  child: ListTile(
-                    leading: const CircleAvatar(
-                      child: Icon(Icons.receipt_long),
-                    ),
-                    title: Text(item.nome),
-                    subtitle: Text('Criado em ${_dataFormatada(item.data)}'),
-                    trailing: Text(
-                      'R\$ ${item.valor.toStringAsFixed(2).replaceAll('.', ',')}',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
+      body: StreamBuilder<List<Orcamento>>(
+        stream: _orcamentoService.listarOrcamentos(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                'Erro ao carregar orçamentos: ${snapshot.error}',
+                textAlign: TextAlign.center,
+              ),
+            );
+          }
+
+          final orcamentos = snapshot.data ?? [];
+
+          if (orcamentos.isEmpty) {
+            return const Center(child: Text('Nenhum orçamento cadastrado.'));
+          }
+
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: orcamentos.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            itemBuilder: (context, index) {
+              final orcamento = orcamentos[index];
+              return Card(
+                child: ListTile(
+                  leading: const CircleAvatar(child: Icon(Icons.receipt_long)),
+                  title: Text(
+                    orcamento.cliente?.nome ?? 'Sem cliente',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                );
-              },
-            ),
+                  subtitle: Text('${orcamento.produtos.length} produto(s)'),
+                  trailing: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        'R\$ ${orcamento.valorTotal.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                  onTap: () => _exibirDetalhes(context, orcamento),
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
-
-  String _dataFormatada(DateTime data) =>
-      '${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')}/${data.year}';
-}
-
-class _Orcamento {
-  const _Orcamento({
-    required this.nome,
-    required this.valor,
-    required this.data,
-  });
-
-  final String nome;
-  final double valor;
-  final DateTime data;
 }

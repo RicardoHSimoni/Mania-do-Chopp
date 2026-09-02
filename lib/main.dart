@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'models/cliente.dart';
 import 'models/produto.dart';
 import 'models/tipo_produto.dart';
+import 'models/orcamento.dart';
 
 import 'firebase_options.dart';
 
@@ -11,6 +12,7 @@ import 'screens/home/home_screen.dart';
 
 import 'screens/orcamentos/orcamento_form_screen.dart';
 import 'screens/orcamentos/orcamentos_screen.dart';
+import 'screens/orcamentos/orcamento_update_screen.dart';
 
 import 'screens/clientes/cliente_screen.dart';
 import 'screens/clientes/cliente_form_screen.dart';
@@ -42,6 +44,15 @@ class MyApp extends StatelessWidget {
         '/orcamentos/orcamento_form_screen': (context) =>
             const OrcamentoFormScreen(),
         '/orcamentos/orcamentos_screen': (context) => const OrcamentosScreen(),
+        '/orcamentos/orcamento_update_screen': (context) {
+          final orcamento =
+              ModalRoute.of(context)?.settings.arguments as Orcamento?;
+          return OrcamentoUpdateScreen(
+            orcamento:
+                orcamento ??
+                Orcamento(id: '', cliente: null, produtos: [], valorTotal: 0.0),
+          );
+        },
 
         '/clientes/cliente_screen': (context) => const ClienteScreen(),
         '/clientes/cliente_form_screen': (context) => const ClienteFormScreen(),
@@ -52,6 +63,7 @@ class MyApp extends StatelessWidget {
             cliente:
                 cliente ??
                 Cliente(
+                  id: '',
                   nome: '',
                   cpf: '',
                   email: '',

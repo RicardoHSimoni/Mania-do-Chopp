@@ -14,8 +14,6 @@ class _ClienteFormScreenState extends State<ClienteFormScreen> {
   final _nomeController = TextEditingController();
   final _telefoneController = TextEditingController();
   final _enderecoController = TextEditingController();
-  final _numeroController = TextEditingController();
-  final _bairroController = TextEditingController();
   final _observacaoController = TextEditingController();
   final _cpfController = TextEditingController();
   final _emailController = TextEditingController();
@@ -24,6 +22,7 @@ class _ClienteFormScreenState extends State<ClienteFormScreen> {
 
   Future<void> salvarCliente() async {
     final cliente = Cliente(
+      id: '',
       nome: _nomeController.text,
       cpf: _cpfController.text,
       email: _emailController.text,
