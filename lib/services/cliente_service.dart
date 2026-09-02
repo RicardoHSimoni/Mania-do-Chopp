@@ -49,14 +49,4 @@ class ClienteService {
   Future<void> excluirCliente(String id) async {
     await _firestore.collection(_collection).doc(id).delete();
   }
-
-  Future<String> getNomeClienteById(String clienteId) async {
-    final cliente = await buscarCliente(clienteId);
-
-    if (cliente == null) {
-      return 'Cliente não encontrado';
-    }
-
-    return cliente.nome;
-  }
 }
