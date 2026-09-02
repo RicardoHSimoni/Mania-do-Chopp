@@ -17,12 +17,16 @@ class _ClienteFormScreenState extends State<ClienteFormScreen> {
   final _numeroController = TextEditingController();
   final _bairroController = TextEditingController();
   final _observacaoController = TextEditingController();
+  final _cpfController = TextEditingController();
+  final _emailController = TextEditingController();
 
   final ClienteService _clienteService = ClienteService();
 
   Future<void> salvarCliente() async {
     final cliente = Cliente(
       nome: _nomeController.text,
+      cpf: _cpfController.text,
+      email: _emailController.text,
       telefone: _telefoneController.text,
       endereco: _enderecoController.text,
       numero: _numeroController.text,
@@ -51,8 +55,13 @@ class _ClienteFormScreenState extends State<ClienteFormScreen> {
             ),
 
             TextField(
-              controller: _telefoneController,
-              decoration: const InputDecoration(labelText: 'Telefone'),
+              controller: _cpfController,
+              decoration: const InputDecoration(labelText: 'CPF'),
+            ),
+
+            TextField(
+              controller: _emailController,
+              decoration: const InputDecoration(labelText: 'Email'),
             ),
 
             TextField(

@@ -14,9 +14,12 @@ class ClienteService {
 
   // Buscar todos os clientes
   Stream<List<Cliente>> listarClientes() {
-    return _firestore.collection(_collection).orderBy('nome').snapshots().map((
-      snapshot,
-    ) {
+    return _firestore
+        .collection(_collection)
+        .orderBy('nome')
+        .limit(10)
+        .snapshots()
+        .map((snapshot) {
       return snapshot.docs.map((doc) {
         return Cliente.fromMap(doc.data(), doc.id);
       }).toList();

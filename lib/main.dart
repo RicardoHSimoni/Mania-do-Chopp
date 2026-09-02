@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
+import 'models/cliente.dart';
+
 import 'firebase_options.dart';
+
 import 'screens/home/home_screen.dart';
+
 import 'screens/orcamentos/orcamento_form_screen.dart';
 import 'screens/orcamentos/orcamentos_screen.dart';
+
 import 'screens/clientes/cliente_screen.dart';
+import 'screens/clientes/cliente_form_screen.dart';
+import 'screens/clientes/cliente_update_screen.dart';
+
 import 'screens/produtos/produto_screen.dart';
 import 'screens/produtos/produto_form_screen.dart';
 
@@ -31,7 +39,26 @@ class MyApp extends StatelessWidget {
         '/orcamentos/orcamento_form_screen': (context) =>
             const OrcamentoFormScreen(),
         '/orcamentos/orcamentos_screen': (context) => const OrcamentosScreen(),
+
         '/clientes/cliente_screen': (context) => const ClienteScreen(),
+        '/clientes/cliente_form_screen': (context) => const ClienteFormScreen(),
+        '/clientes/cliente_update_screen': (context) {
+          final cliente =
+              ModalRoute.of(context)?.settings.arguments as Cliente?;
+          return ClienteUpdateScreen(
+            cliente:
+                cliente ??
+                Cliente(
+                  nome: '',
+                  cpf: '',
+                  email: '',
+                  telefone: '',
+                  endereco: '',
+                  numero: '',
+                  bairro: '',
+                ),
+          );
+        },
         '/produtos/produto_screen': (context) => const ProdutoScreen(),
         '/produtos/produto_form_screen': (context) => const ProdutoFormScreen(),
       },
