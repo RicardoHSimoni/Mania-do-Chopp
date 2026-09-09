@@ -49,4 +49,45 @@ class PedidoService {
   Future<void> excluirPedido(String id) async {
     await _firestore.collection(_collection).doc(id).delete();
   }
+
+  Future<void> atualizarQuantidadeProdutosVendidos(String orcamentoId) async {
+    final orcamentoDoc = await _firestore
+        .collection('orcamentos')
+        .doc(orcamentoId)
+        .get();
+
+    if (!orcamentoDoc.exists) {
+      throw Exception('Orçamento não encontrado.');
+    }
+
+    final dados = orcamentoDoc.data()!;
+
+    final produtos = dados['produtos'] as List<dynamic>;
+
+    for (final item in produtos) {
+      final produtoId = item['produtoId'] as String;
+      final quantidadeVendida = item['quantidade'] as int;
+
+      final produtoDoc = await _firestore
+          .collection('produtos')
+          .doc(produtoId)
+          .get();
+
+      if (!produtoDoc.exists) {
+        throw Exception('Produto $produtoId não encontrado.');
+      }
+
+      final produtoData = produtoDoc.data()!;
+
+      final estoqueAtual = (produtoData['quantidade'] ?? 0) as int;
+
+      if (quantidadeVendida > estoqueAtual) {
+        throw Exception('Estoque insuficiente para o produto $produtoId.');
+      }
+
+      await _firestore.collection('produtos').doc(produtoId).update({
+        'quantidade': estoqueAtual - quantidadeVendida,
+      });
+    }
+  }
 }

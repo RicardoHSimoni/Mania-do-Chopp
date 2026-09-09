@@ -9,8 +9,20 @@ class OrcamentoService {
   final String _collection = 'orcamentos';
 
   // Criar orçamento
-  Future<void> adicionarOrcamento(Orcamento orcamento) async {
-    await _firestore.collection(_collection).add(orcamento.toMap());
+  Future<Orcamento> adicionarOrcamento(Orcamento orcamento) async {
+    final docRef = await _firestore
+        .collection(_collection)
+        .add(orcamento.toMap());
+
+    return Orcamento(
+      id: docRef.id,
+      clienteId: orcamento.clienteId,
+      produtos: orcamento.produtos,
+      valorTotal: orcamento.valorTotal,
+      dataCriacao: orcamento.dataCriacao,
+      desconto: orcamento.desconto,
+      observacao: orcamento.observacao,
+    );
   }
 
   // Buscar todos os orçamentos

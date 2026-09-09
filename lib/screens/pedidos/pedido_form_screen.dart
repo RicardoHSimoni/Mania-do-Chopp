@@ -59,6 +59,9 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
 
   Future<void> _salvar() async {
     if (!_formKey.currentState!.validate()) return;
+
+    print('ID do orçamento: ${widget.orcamento.id}');
+
     setState(() => _salvando = true);
     try {
       await _pedidoService.adicionarPedido(
@@ -74,6 +77,12 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
         ),
       );
       if (mounted) {
+        await _pedidoService.atualizarQuantidadeProdutosVendidos(
+          widget.orcamento.id,
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pedido cadastrado com sucesso!')),
+        );
         Navigator.of(context).pop(true);
       }
     } catch (_) {

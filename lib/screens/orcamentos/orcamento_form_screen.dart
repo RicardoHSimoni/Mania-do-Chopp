@@ -136,7 +136,9 @@ class _OrcamentoFormScreenState extends State<OrcamentoFormScreen> {
       );
 
       // Salvar no banco de dados
-      await _orcamentoService.adicionarOrcamento(orcamento);
+      final orcamentoSalvo = await _orcamentoService.adicionarOrcamento(
+        orcamento,
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -161,7 +163,7 @@ class _OrcamentoFormScreenState extends State<OrcamentoFormScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => PedidoFormScreen(orcamento: orcamento),
+              builder: (context) => PedidoFormScreen(orcamento: orcamentoSalvo),
             ),
           );
         } else {
