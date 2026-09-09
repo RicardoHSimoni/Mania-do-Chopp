@@ -61,17 +61,21 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _salvando = true);
     try {
-      await _pedidoService.adicionarPedido(Pedido(
-        id: '',
-        clienteId: _clienteController.text.trim(),
-        orcamentoId: widget.orcamento.id,
-        dataEntrega: _dataEntrega,
-        enderecoEntrega: _enderecoController.text.trim(),
-        observacoes: _observacoesController.text.trim(),
-        entregue: _entregue,
-        pago: _pago,
-      ));
-      if (mounted) Navigator.of(context).pop(true);
+      await _pedidoService.adicionarPedido(
+        Pedido(
+          id: '',
+          clienteId: _clienteController.text.trim(),
+          orcamentoId: widget.orcamento.id,
+          dataEntrega: _dataEntrega,
+          enderecoEntrega: _enderecoController.text.trim(),
+          observacoes: _observacoesController.text.trim(),
+          entregue: _entregue,
+          pago: _pago,
+        ),
+      );
+      if (mounted) {
+        Navigator.of(context).pop(true);
+      }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -131,7 +135,9 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _enderecoController,
-              decoration: const InputDecoration(labelText: 'Endereço de entrega'),
+              decoration: const InputDecoration(
+                labelText: 'Endereço de entrega',
+              ),
               maxLines: 2,
               validator: (value) => value == null || value.trim().isEmpty
                   ? 'Informe o endereço de entrega'

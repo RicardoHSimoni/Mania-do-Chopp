@@ -16,6 +16,7 @@ class ProdutoFormScreen extends StatefulWidget {
 class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
   late TextEditingController _nomeController;
   late TextEditingController _precoController;
+  late TextEditingController _quantidadeController;
   TipoProduto? _tipoSelecionado;
   final _formKey = GlobalKey<FormState>();
 
@@ -28,6 +29,9 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
     _precoController = TextEditingController(
       text: widget.produto?.preco.toString() ?? '',
     );
+    _quantidadeController = TextEditingController(
+      text: widget.produto?.quantidade.toString() ?? '0',
+    );
     _tipoSelecionado = widget.produto?.tipo;
   }
 
@@ -35,6 +39,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
   void dispose() {
     _nomeController.dispose();
     _precoController.dispose();
+    _quantidadeController.dispose();
     super.dispose();
   }
 
@@ -43,12 +48,14 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
       final nome = _nomeController.text;
       final preco = double.parse(_precoController.text);
       final tipo = _tipoSelecionado!;
+      final quantidade = int.parse(_quantidadeController.text);
 
       final novoProduto = Produto(
         id: widget.produto?.id ?? '', // Use o ID existente ou um novo
         nome: nome,
         preco: preco,
         tipo: tipo,
+        quantidade: quantidade,
       );
 
       await _produtoService.adicionarProduto(novoProduto);
@@ -135,6 +142,15 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                   }
                   return null;
                 },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _quantidadeController,
+                decoration: const InputDecoration(
+                  labelText: 'Quantidade em estoque atualmente: ',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 24),
               ElevatedButton(

@@ -115,6 +115,10 @@ class _ProdutoScreenState extends State<ProdutoScreen> {
                       'Preço',
                       'R\$ ${produto.preco.toStringAsFixed(2)}',
                     ),
+                    _construirDetalhe(
+                      'Quantidade em estoque',
+                      produto.quantidade.toString(),
+                    ),
                     const SizedBox(height: 24),
                     Row(
                       children: [
@@ -266,6 +270,15 @@ class _ProdutoScreenState extends State<ProdutoScreen> {
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.green,
+                              ),
+                            ),
+                            Text(
+                              'Quantidade em estoque: ${produto.quantidade}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: produto.quantidade < 5
+                                    ? Colors.red
+                                    : Colors.blue,
                               ),
                             ),
                           ],

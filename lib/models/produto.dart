@@ -5,12 +5,14 @@ class Produto {
   final String nome;
   final double preco;
   final TipoProduto tipo;
+  final int quantidade;
 
   Produto({
     required this.id,
     required this.nome,
     required this.preco,
     required this.tipo,
+    this.quantidade = 0,
   });
 
   Map<String, dynamic> toMap() {
@@ -18,6 +20,7 @@ class Produto {
       'nome': nome,
       'preco': preco,
       'tipo': tipo.toString().split('.').last,
+      'quantidade': quantidade,
     };
   }
 
@@ -29,6 +32,7 @@ class Produto {
       tipo: TipoProduto.values.firstWhere(
         (e) => e.toString().split('.').last == map['tipo'],
       ),
+      quantidade: map['quantidade'] as int,
     );
   }
 }

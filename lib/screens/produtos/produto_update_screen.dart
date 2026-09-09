@@ -7,10 +7,7 @@ import '../../services/produto_service.dart';
 class ProdutoUpdateScreen extends StatefulWidget {
   final Produto produto;
 
-  const ProdutoUpdateScreen({
-    super.key,
-    required this.produto,
-  });
+  const ProdutoUpdateScreen({super.key, required this.produto});
 
   @override
   State<ProdutoUpdateScreen> createState() => _ProdutoUpdateScreenState();
@@ -20,6 +17,7 @@ class _ProdutoUpdateScreenState extends State<ProdutoUpdateScreen> {
   late TextEditingController _nomeController;
   late TextEditingController _precoController;
   late TipoProduto _tipoSelecionado;
+  late TextEditingController _quantidadeController;
 
   final ProdutoService _produtoService = ProdutoService();
 
@@ -31,28 +29,30 @@ class _ProdutoUpdateScreenState extends State<ProdutoUpdateScreen> {
       text: widget.produto.preco.toStringAsFixed(2),
     );
     _tipoSelecionado = widget.produto.tipo;
+    _quantidadeController = TextEditingController(
+      text: widget.produto.quantidade.toString(),
+    );
   }
 
   @override
   void dispose() {
     _nomeController.dispose();
     _precoController.dispose();
+    _quantidadeController.dispose();
     super.dispose();
   }
 
   Future<void> atualizarProduto() async {
     if (_nomeController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nome é obrigatório')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Nome é obrigatório')));
       return;
     }
 
     final preco = double.tryParse(_precoController.text);
     if (preco == null || preco <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Preço inválido')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Preço inválido')));
       return;
     }
 
@@ -61,6 +61,7 @@ class _ProdutoUpdateScreenState extends State<ProdutoUpdateScreen> {
       nome: _nomeController.text,
       preco: preco,
       tipo: _tipoSelecionado,
+      quantidade: int.tryParse(_quantidadeController.text) ?? 0,
     );
 
     try {
@@ -74,9 +75,8 @@ class _ProdutoUpdateScreenState extends State<ProdutoUpdateScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao atualizar: $e')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Erro ao atualizar: $e')));
       }
     }
   }
@@ -97,8 +97,9 @@ class _ProdutoUpdateScreenState extends State<ProdutoUpdateScreen> {
               const SizedBox(height: 16),
               TextField(
                 controller: _precoController,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 decoration: const InputDecoration(labelText: 'Preço'),
               ),
               const SizedBox(height: 16),
@@ -120,6 +121,11 @@ class _ProdutoUpdateScreenState extends State<ProdutoUpdateScreen> {
                     });
                   }
                 },
+              ),
+              TextField(
+                controller: _quantidadeController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Quantidade'),
               ),
               const SizedBox(height: 20),
               ElevatedButton(
