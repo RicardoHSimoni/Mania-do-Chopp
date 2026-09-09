@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_app/screens/clientes/cliente_search_screen.dart';
 
 import '../../models/cliente.dart';
 import '../../models/produto.dart';
@@ -21,7 +22,7 @@ class _OrcamentoFormScreenState extends State<OrcamentoFormScreen> {
   late ProdutoService _produtoService;
   late OrcamentoService _orcamentoService;
 
-  String? selectedClientId;
+  Cliente? _selectedCliente;
   final List<OrcamentoItem> products = [];
   final TextEditingController _descontoController = TextEditingController();
   final TextEditingController _observacaoController = TextEditingController();
@@ -38,9 +39,22 @@ class _OrcamentoFormScreenState extends State<OrcamentoFormScreen> {
     return (totalValue - descontoTotal).clamp(0, double.infinity);
   }
 
+  Future<void> _selecionarCliente() async {
+    final cliente = await Navigator.push<Cliente>(
+      context,
+      MaterialPageRoute(builder: (context) => const ClienteSearchScreen()),
+    );
+
+    if (cliente == null || !mounted) return;
+
+    setState(() {
+      _selectedCliente = cliente;
+    });
+  }
+
   Orcamento get currentOrcamento => Orcamento(
     id: '',
-    clienteId: selectedClientId,
+    clienteId: _selectedCliente?.id,
     produtos: products,
     valorTotal: valorFinal,
     dataCriacao: DateTime.now(),
@@ -125,7 +139,7 @@ class _OrcamentoFormScreenState extends State<OrcamentoFormScreen> {
       // Criar objeto Orcamento
       final orcamento = Orcamento(
         id: '',
-        clienteId: selectedClientId,
+        clienteId: _selectedCliente?.id,
         produtos: products,
         valorTotal: valorFinal,
         dataCriacao: DateTime.now(),
@@ -151,7 +165,7 @@ class _OrcamentoFormScreenState extends State<OrcamentoFormScreen> {
 
         // Limpar formulário
         setState(() {
-          selectedClientId = null;
+          _selectedCliente = null;
           products.clear();
           _descontoController.clear();
           _observacaoController.clear();
@@ -200,45 +214,22 @@ class _OrcamentoFormScreenState extends State<OrcamentoFormScreen> {
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
-            StreamBuilder<List<Cliente>>(
-              stream: _clienteService.listarClientes(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                final clientes = snapshot.data ?? [];
-
-                return DropdownButtonFormField<String?>(
-                  initialValue: selectedClientId,
-                  items: [
-                    const DropdownMenuItem(
-                      value: null,
-                      child: Text('Selecione um cliente'),
-                    ),
-                    ...clientes.map(
-                      (cliente) => DropdownMenuItem(
-                        value: cliente.id,
-                        child: Text(cliente.nome),
-                      ),
-                    ),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      selectedClientId = value;
-                    });
-                  },
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 16,
-                    ),
-                  ),
-                );
-              },
+            OutlinedButton.icon(
+              onPressed: _selecionarCliente,
+              icon: const Icon(Icons.person_search),
+              label: Text(
+                _selectedCliente == null
+                    ? 'Selecionar cliente'
+                    : _selectedCliente!.nome,
+              ),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 56),
+                alignment: Alignment.centerLeft,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
             ),
             const SizedBox(height: 24),
             const Text(
