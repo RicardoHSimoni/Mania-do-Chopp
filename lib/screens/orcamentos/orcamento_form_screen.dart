@@ -7,6 +7,7 @@ import '../../models/orcamento_item.dart';
 import '../../services/cliente_service.dart';
 import '../../services/produto_service.dart';
 import '../../services/orcamento_service.dart';
+import '../pedidos/pedido_form_screen.dart';
 
 class OrcamentoFormScreen extends StatefulWidget {
   const OrcamentoFormScreen({Key? key}) : super(key: key);
@@ -36,6 +37,18 @@ class _OrcamentoFormScreenState extends State<OrcamentoFormScreen> {
   double get valorFinal {
     return (totalValue - descontoTotal).clamp(0, double.infinity);
   }
+
+  Orcamento get currentOrcamento => Orcamento(
+    id: '',
+    clienteId: selectedClientId,
+    produtos: products,
+    valorTotal: valorFinal,
+    dataCriacao: DateTime.now(),
+    desconto: descontoTotal,
+    observacao: _observacaoController.text.isEmpty
+        ? null
+        : _observacaoController.text,
+  );
 
   @override
   void initState() {
@@ -100,7 +113,7 @@ class _OrcamentoFormScreenState extends State<OrcamentoFormScreen> {
     });
   }
 
-  void submitOrder() async {
+  void submitOrder(bool vaiVirarPedido) async {
     if (products.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Adicione pelo menos um produto')),
@@ -143,7 +156,17 @@ class _OrcamentoFormScreenState extends State<OrcamentoFormScreen> {
         });
 
         // Voltar para tela anterior
-        Navigator.pop(context);
+        if (vaiVirarPedido) {
+          Navigator.pop(context);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PedidoFormScreen(orcamento: orcamento),
+            ),
+          );
+        } else {
+          Navigator.pop(context);
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -489,7 +512,7 @@ class _OrcamentoFormScreenState extends State<OrcamentoFormScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: submitOrder,
+                onPressed: () => submitOrder(false),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   backgroundColor: Colors.green,
@@ -499,6 +522,23 @@ class _OrcamentoFormScreenState extends State<OrcamentoFormScreen> {
                 ),
                 child: const Text(
                   'Cadastrar Orçamento',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () => submitOrder(true),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Gerar Pedido',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),

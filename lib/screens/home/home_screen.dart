@@ -47,6 +47,14 @@ class HomeScreen extends StatelessWidget {
                 },
               ),
               ListTile(
+                leading: const Icon(Icons.shopping_cart_outlined),
+                title: const Text('Pedidos'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/pedidos/pedidos_screen');
+                },
+              ),
+              ListTile(
                 leading: const Icon(Icons.people_outlined),
                 title: const Text('Clientes'),
                 onTap: () {

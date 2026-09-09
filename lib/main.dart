@@ -14,6 +14,9 @@ import 'screens/orcamentos/orcamento_form_screen.dart';
 import 'screens/orcamentos/orcamentos_screen.dart';
 import 'screens/orcamentos/orcamento_update_screen.dart';
 
+import 'screens/pedidos/pedidos_screen.dart';
+import 'screens/pedidos/pedido_form_screen.dart';
+
 import 'screens/clientes/cliente_screen.dart';
 import 'screens/clientes/cliente_form_screen.dart';
 import 'screens/clientes/cliente_update_screen.dart';
@@ -44,6 +47,7 @@ class MyApp extends StatelessWidget {
         '/orcamentos/orcamento_form_screen': (context) =>
             const OrcamentoFormScreen(),
         '/orcamentos/orcamentos_screen': (context) => const OrcamentosScreen(),
+        '/pedidos/pedidos_screen': (context) => const PedidosScreen(),
         '/orcamentos/orcamento_update_screen': (context) {
           final orcamento =
               ModalRoute.of(context)?.settings.arguments as Orcamento?;
@@ -89,6 +93,24 @@ class MyApp extends StatelessWidget {
             produto:
                 produto ??
                 Produto(id: '', nome: '', tipo: TipoProduto.outro, preco: 0.0),
+          );
+        },
+        '/pedidos/pedido_screen': (context) => const PedidosScreen(),
+        '/pedidos/pedido_form_screen': (context) {
+          final orcamento =
+              ModalRoute.of(context)?.settings.arguments as Orcamento?;
+          return PedidoFormScreen(
+            orcamento:
+                orcamento ??
+                Orcamento(
+                  id: '',
+                  clienteId: null,
+                  produtos: [],
+                  valorTotal: 0.0,
+                  dataCriacao: DateTime.now(),
+                  desconto: 0,
+                  observacao: null,
+                ),
           );
         },
       },
