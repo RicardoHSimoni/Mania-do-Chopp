@@ -17,7 +17,6 @@ class PedidoService {
     return _firestore
         .collection(_collection)
         .orderBy('dataEntrega')
-        .limit(10)
         .snapshots()
         .map((snapshot) {
           return snapshot.docs.map((doc) {
