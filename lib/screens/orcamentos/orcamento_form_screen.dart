@@ -140,7 +140,8 @@ class _OrcamentoFormScreenState extends State<OrcamentoFormScreen> {
       final orcamento = Orcamento(
         id: '',
         clienteId: _selectedCliente?.id,
-        produtos: products,
+        // Cria uma cópia para que limpar o formulário não altere o orçamento salvo.
+        produtos: List<OrcamentoItem>.from(products),
         valorTotal: valorFinal,
         dataCriacao: DateTime.now(),
         desconto: descontoTotal,

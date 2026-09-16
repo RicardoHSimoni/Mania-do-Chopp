@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../services/produto_service.dart';
+
+final _produtoService = ProdutoService();
+
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -103,9 +107,9 @@ class HomeScreen extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 20),
-                        const Center(
+                        Center(
                           child: Text(
-                            'Nenhuma demanda para hoje.',
+                            'Nenhuma demanda para hoje',
                             textAlign: TextAlign.center,
                           ),
                         ),

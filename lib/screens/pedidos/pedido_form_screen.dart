@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/orcamento.dart';
 import '../../models/pedido.dart';
 import '../../services/pedido_service.dart';
+import '../../services/produto_service.dart';
 
 class PedidoFormScreen extends StatefulWidget {
   final Orcamento orcamento;
@@ -26,17 +27,27 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
   final _enderecoController = TextEditingController();
   final _observacoesController = TextEditingController();
   final _pedidoService = PedidoService();
+  final _produtoService = ProdutoService();
 
   late DateTime _dataEntrega;
+  List<String> chopeirasSelecionadas = [];
   bool _entregue = false;
   bool _pago = false;
   bool _salvando = false;
+  bool _possuiChopp = false;
+
+  /*bool _possuiChopp() {
+    return widget.orcamento.produtos.any(
+      (produto) => _produtoService.buscarTipoProduto(produto.id) == 'chopp',
+    );
+  }*/
 
   @override
   void initState() {
     super.initState();
     _clienteController.text = widget.orcamento.clienteId ?? '';
     _dataEntrega = DateTime.now().add(const Duration(days: 1));
+    _verificarSePossuiChopp();
   }
 
   @override
@@ -55,6 +66,20 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
       lastDate: DateTime.now().add(const Duration(days: 3650)),
     );
     if (data != null) setState(() => _dataEntrega = data);
+  }
+
+  Future<void> _verificarSePossuiChopp() async {
+    for (final item in widget.orcamento.produtos) {
+      final tipo = await _produtoService.buscarTipoProduto(item.produtoId);
+
+      if (tipo == 'chopp') {
+        setState(() {
+          _possuiChopp = true;
+        });
+
+        return;
+      }
+    }
   }
 
   Future<void> _salvar() async {
@@ -152,6 +177,14 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
                   ? 'Informe o endereço de entrega'
                   : null,
             ),
+            if (_possuiChopp) ...[
+              const SizedBox(height: 8),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Chopeiras'),
+                subtitle: Text(' escolhidas'),
+              ),
+            ],
             const SizedBox(height: 8),
             ListTile(
               contentPadding: EdgeInsets.zero,

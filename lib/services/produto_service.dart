@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/semantics.dart';
 
 import '../models/produto.dart';
+import '../models/tipo_produto.dart';
 
 class ProdutoService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -48,5 +50,15 @@ class ProdutoService {
   // Excluir produto
   Future<void> excluirProduto(String id) async {
     await _firestore.collection(_collection).doc(id).delete();
+  }
+
+  Future<String> buscarTipoProduto(String id) async {
+    final doc = await _firestore.collection(_collection).doc(id).get();
+
+    if (!doc.exists) {
+      throw Exception('Produto não encontrado');
+    }
+
+    return doc.data()?['tipo'] as String;
   }
 }
