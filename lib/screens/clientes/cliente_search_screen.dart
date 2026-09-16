@@ -100,7 +100,6 @@ class _ClienteSearchScreenState extends State<ClienteSearchScreen> {
   }
 
   // Seleciona o cliente e devolve para a tela anterior
-
   void _selecionarCliente(Cliente cliente) {
     Navigator.pop(context, cliente);
   }

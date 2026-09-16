@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../models/orcamento.dart';
 import '../../models/pedido.dart';
+import '../../models/chopeira.dart';
 import '../../services/pedido_service.dart';
 import '../../services/produto_service.dart';
+import '../chopeiras/chopeira_search_screen.dart';
 
 class PedidoFormScreen extends StatefulWidget {
   final Orcamento orcamento;
@@ -30,7 +32,7 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
   final _produtoService = ProdutoService();
 
   late DateTime _dataEntrega;
-  List<String> chopeirasSelecionadas = [];
+  List<int> chopeirasSelecionadas = [];
   bool _entregue = false;
   bool _pago = false;
   bool _salvando = false;
@@ -66,6 +68,23 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
       lastDate: DateTime.now().add(const Duration(days: 3650)),
     );
     if (data != null) setState(() => _dataEntrega = data);
+  }
+
+  Future<void> _selecionarChopeiras() async {
+    final selecionadas = await Navigator.of(context).push<List<Chopeira>>(
+      MaterialPageRoute(
+        builder: (_) =>
+            ChopeiraSearchScreen(selecionadosIniciais: chopeirasSelecionadas),
+      ),
+    );
+
+    if (selecionadas != null && mounted) {
+      setState(() {
+        chopeirasSelecionadas = selecionadas
+            .map((chopeira) => chopeira.codigo)
+            .toList();
+      });
+    }
   }
 
   Future<void> _verificarSePossuiChopp() async {
@@ -181,8 +200,24 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
               const SizedBox(height: 8),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Chopeiras'),
-                subtitle: Text(' escolhidas'),
+                title: const Text('Selecionar chopeiras para o pedido'),
+                subtitle: OutlinedButton.icon(
+                  onPressed: _selecionarChopeiras,
+                  icon: const Icon(Icons.local_bar),
+                  label: Text(
+                    chopeirasSelecionadas.isEmpty
+                        ? 'Selecionar chopeiras'
+                        : '${chopeirasSelecionadas.length} chopeira(s) selecionada(s)',
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 56),
+                    alignment: Alignment.centerLeft,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
               ),
             ],
             const SizedBox(height: 8),
