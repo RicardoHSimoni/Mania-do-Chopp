@@ -7,6 +7,8 @@ class Pedido {
   final DateTime dataEntrega;
   final String enderecoEntrega;
   final String observacoes;
+  final List<int>? chopeirasSelecionadas;
+  final double valorTotal;
   final bool entregue;
   final bool pago;
 
@@ -17,6 +19,8 @@ class Pedido {
     required this.dataEntrega,
     required this.enderecoEntrega,
     required this.observacoes,
+    required this.chopeirasSelecionadas,
+    required this.valorTotal,
     required this.entregue,
     required this.pago,
   });
@@ -28,6 +32,8 @@ class Pedido {
       'dataEntrega': dataEntrega,
       'enderecoEntrega': enderecoEntrega,
       'observacoes': observacoes,
+      'chopeirasSelecionadas': chopeirasSelecionadas,
+      'valorTotal': valorTotal,
       'entregue': entregue,
       'pago': pago,
     };
@@ -51,6 +57,9 @@ class Pedido {
       dataEntrega: dataEntrega,
       enderecoEntrega: map['enderecoEntrega'] as String? ?? '',
       observacoes: map['observacoes'] as String? ?? '',
+      chopeirasSelecionadas: (map['chopeirasSelecionadas'] as List<dynamic>?)
+          ?.cast<int>(),
+      valorTotal: map['valorTotal'] as double? ?? 0.0,
       entregue: map['entregue'] as bool? ?? false,
       pago: map['pago'] as bool? ?? false,
     );

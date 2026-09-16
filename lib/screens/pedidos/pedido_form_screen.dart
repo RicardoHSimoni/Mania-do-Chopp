@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import '../../models/orcamento.dart';
 import '../../models/pedido.dart';
 import '../../models/chopeira.dart';
+import '../../models/cliente.dart';
 import '../../services/pedido_service.dart';
 import '../../services/produto_service.dart';
 import '../chopeiras/chopeira_search_screen.dart';
+import '../clientes/cliente_search_screen.dart';
 
 class PedidoFormScreen extends StatefulWidget {
   final Orcamento orcamento;
@@ -32,17 +34,12 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
   final _produtoService = ProdutoService();
 
   late DateTime _dataEntrega;
+  Cliente? _selectedCliente;
   List<int> chopeirasSelecionadas = [];
   bool _entregue = false;
   bool _pago = false;
   bool _salvando = false;
   bool _possuiChopp = false;
-
-  /*bool _possuiChopp() {
-    return widget.orcamento.produtos.any(
-      (produto) => _produtoService.buscarTipoProduto(produto.id) == 'chopp',
-    );
-  }*/
 
   @override
   void initState() {
@@ -87,6 +84,19 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
     }
   }
 
+  Future<void> _selecionarCliente() async {
+    final cliente = await Navigator.push<Cliente>(
+      context,
+      MaterialPageRoute(builder: (context) => const ClienteSearchScreen()),
+    );
+
+    if (cliente == null || !mounted) return;
+
+    setState(() {
+      _selectedCliente = cliente;
+    });
+  }
+
   Future<void> _verificarSePossuiChopp() async {
     for (final item in widget.orcamento.produtos) {
       final tipo = await _produtoService.buscarTipoProduto(item.produtoId);
@@ -116,6 +126,8 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
           dataEntrega: _dataEntrega,
           enderecoEntrega: _enderecoController.text.trim(),
           observacoes: _observacoesController.text.trim(),
+          chopeirasSelecionadas: chopeirasSelecionadas,
+          valorTotal: widget.orcamento.valorTotal,
           entregue: _entregue,
           pago: _pago,
         ),
@@ -173,12 +185,7 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
                     : IconButton(
                         icon: const Icon(Icons.person_add),
                         tooltip: 'Adicionar cliente',
-                        onPressed: () async {
-                          final id = await widget.onAdicionarCliente!();
-                          if (id != null && mounted) {
-                            _clienteController.text = id;
-                          }
-                        },
+                        onPressed: _selecionarCliente,
                       ),
               ),
               validator: (value) => value == null || value.trim().isEmpty

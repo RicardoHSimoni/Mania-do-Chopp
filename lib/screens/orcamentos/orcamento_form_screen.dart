@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_app/screens/clientes/cliente_search_screen.dart';
+import 'package:mania_do_chopp/screens/clientes/cliente_search_screen.dart';
 
 import '../../models/cliente.dart';
 import '../../models/produto.dart';

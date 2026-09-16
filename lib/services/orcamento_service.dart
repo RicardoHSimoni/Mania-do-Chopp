@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_app/models/orcamento_item.dart';
+import 'package:mania_do_chopp/models/orcamento_item.dart';
 
 import '../models/orcamento.dart';
 

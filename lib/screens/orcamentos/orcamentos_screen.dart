@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_app/models/cliente.dart';
+import 'package:mania_do_chopp/models/cliente.dart';
 
 import '../../models/orcamento.dart';
 import '../../services/orcamento_service.dart';
