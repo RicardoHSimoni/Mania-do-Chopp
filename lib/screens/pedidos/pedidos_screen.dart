@@ -344,7 +344,7 @@ class _PedidosScreenState extends State<PedidosScreen> {
   }
 }
 
-class PedidoDetalheScreen extends StatelessWidget {
+class PedidoDetalheScreen extends StatefulWidget {
   final Pedido pedido;
   final Cliente? cliente;
 
@@ -353,6 +353,20 @@ class PedidoDetalheScreen extends StatelessWidget {
     required this.pedido,
     required this.cliente,
   });
+
+  @override
+  State<PedidoDetalheScreen> createState() => _PedidoDetalheScreenState();
+}
+
+class _PedidoDetalheScreenState extends State<PedidoDetalheScreen> {
+  final _pedidoService = PedidoService();
+  late Pedido _pedido;
+
+  @override
+  void initState() {
+    super.initState();
+    _pedido = widget.pedido;
+  }
 
   String _formatarData(DateTime data) {
     return '${data.day.toString().padLeft(2, '0')}/'
@@ -365,6 +379,33 @@ class PedidoDetalheScreen extends StatelessWidget {
       title: Text(titulo),
       subtitle: Text(valor.isEmpty ? 'Não informado' : valor),
     );
+  }
+
+  Future<void> _alterarStatus({bool? entregue, bool? pago}) async {
+    final pedidoAnterior = _pedido;
+    final pedidoAtualizado = Pedido(
+      id: _pedido.id,
+      clienteId: _pedido.clienteId,
+      orcamentoId: _pedido.orcamentoId,
+      dataEntrega: _pedido.dataEntrega,
+      enderecoEntrega: _pedido.enderecoEntrega,
+      observacoes: _pedido.observacoes,
+      chopeirasSelecionadas: _pedido.chopeirasSelecionadas,
+      valorTotal: _pedido.valorTotal,
+      entregue: entregue ?? _pedido.entregue,
+      pago: pago ?? _pedido.pago,
+    );
+
+    setState(() => _pedido = pedidoAtualizado);
+    try {
+      await _pedidoService.atualizarPedido(pedidoAtualizado);
+    } catch (erro) {
+      if (!mounted) return;
+      setState(() => _pedido = pedidoAnterior);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao atualizar pedido: $erro')),
+      );
+    }
   }
 
   @override
@@ -381,11 +422,11 @@ class PedidoDetalheScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Pedido ${pedido.id}',
+                    'Pedido ${_pedido.id}',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 4),
-                  Text('Orçamento: ${pedido.orcamentoId}'),
+                  Text('Orçamento: ${_pedido.orcamentoId}'),
                 ],
               ),
             ),
@@ -396,16 +437,20 @@ class PedidoDetalheScreen extends StatelessWidget {
               children: [
                 _campo(
                   'Cliente',
-                  cliente?.nome ?? 'Cliente não encontrado',
+                  widget.cliente?.nome ?? 'Cliente não encontrado',
                   Icons.person_outline,
                 ),
-                _campo('CPF', cliente?.cpf ?? '', Icons.badge_outlined),
+                _campo('CPF', widget.cliente?.cpf ?? '', Icons.badge_outlined),
                 _campo(
                   'Telefone',
-                  cliente?.telefone ?? '',
+                  widget.cliente?.telefone ?? '',
                   Icons.phone_outlined,
                 ),
-                _campo('E-mail', cliente?.email ?? '', Icons.email_outlined),
+                _campo(
+                  'E-mail',
+                  widget.cliente?.email ?? '',
+                  Icons.email_outlined,
+                ),
               ],
             ),
           ),
@@ -414,16 +459,33 @@ class PedidoDetalheScreen extends StatelessWidget {
             child: Column(
               children: [
                 _campo(
+                  'Valor total',
+                  'R\$ ${_pedido.valorTotal.toStringAsFixed(2)}',
+                  Icons.attach_money_outlined,
+                ),
+                _campo(
                   'Data de entrega',
-                  _formatarData(pedido.dataEntrega),
+                  _formatarData(_pedido.dataEntrega),
                   Icons.calendar_month,
                 ),
                 _campo(
                   'Endereço de entrega',
-                  pedido.enderecoEntrega,
+                  _pedido.enderecoEntrega,
                   Icons.location_on_outlined,
                 ),
-                _campo('Observações', pedido.observacoes, Icons.notes_outlined),
+                _campo(
+                  'Observações',
+                  _pedido.observacoes,
+                  Icons.notes_outlined,
+                ),
+                _campo(
+                  'Chopeiras selecionadas',
+                  _pedido.chopeirasSelecionadas == null ||
+                          _pedido.chopeirasSelecionadas!.isEmpty
+                      ? 'Nenhuma chopeira selecionada'
+                      : _pedido.chopeirasSelecionadas!.join(', '),
+                  Icons.local_drink_outlined,
+                ),
               ],
             ),
           ),
@@ -433,13 +495,13 @@ class PedidoDetalheScreen extends StatelessWidget {
               children: [
                 SwitchListTile(
                   title: const Text('Pedido entregue'),
-                  value: pedido.entregue,
-                  onChanged: null,
+                  value: _pedido.entregue,
+                  onChanged: (valor) => _alterarStatus(entregue: valor),
                 ),
                 SwitchListTile(
                   title: const Text('Pedido pago'),
-                  value: pedido.pago,
-                  onChanged: null,
+                  value: _pedido.pago,
+                  onChanged: (valor) => _alterarStatus(pago: valor),
                 ),
               ],
             ),
