@@ -203,6 +203,29 @@ class _OrcamentosScreenState extends State<OrcamentosScreen> {
                         ),
                       ],
                     ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              Navigator.pushNamed(
+                                context,
+                                '/pedidos/pedido_form_screen',
+                                arguments: orcamento,
+                              );
+                            },
+                            icon: const Icon(Icons.point_of_sale_outlined),
+                            label: const Text('Gerar Pedido'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
