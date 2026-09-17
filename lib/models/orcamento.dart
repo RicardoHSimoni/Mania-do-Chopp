@@ -5,9 +5,9 @@ import 'orcamento_item.dart';
 class Orcamento {
   final String id;
   final String? clienteId; //opcional, pode ser null
-  final List<OrcamentoItem> produtos; // se o orçamento incluir barril de chopp, no pedido precisa ter  chopeira
+  final List<OrcamentoItem> produtos;
   final double valorTotal;
-  final DateTime dataCriacao; //opcional, pode ser null
+  final DateTime dataCriacao;
   final double desconto; //opcional, pode ser null
   final String? observacao; //opcional, pode ser null
 
