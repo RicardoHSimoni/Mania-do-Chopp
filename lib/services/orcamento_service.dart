@@ -42,6 +42,23 @@ class OrcamentoService {
         });
   }
 
+  Stream<List<Orcamento>> listarOrcamentosSemPedido() {
+    return _firestore
+        .collection(_collection)
+        .where('pedidoGerado', isEqualTo: false)
+        .orderBy('dataCriacao', descending: true)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) {
+            return Orcamento.fromMap(doc.data(), doc.id);
+          }).toList();
+        })
+        .handleError((error) {
+          print('Erro ao listar orçamentos: $error');
+          return <Orcamento>[];
+        });
+  }
+
   // Buscar um orçamento pelo ID
   Future<Orcamento?> buscarOrcamento(String id) async {
     final doc = await _firestore.collection(_collection).doc(id).get();

@@ -10,6 +10,7 @@ class Orcamento {
   final DateTime dataCriacao;
   final double desconto; //opcional, pode ser null
   final String? observacao; //opcional, pode ser null
+  final bool pedidoGerado; //true quando este orçamento já virou um pedido
 
   Orcamento({
     required this.id,
@@ -19,6 +20,7 @@ class Orcamento {
     required this.dataCriacao,
     this.desconto = 0,
     this.observacao,
+    this.pedidoGerado = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -29,6 +31,7 @@ class Orcamento {
       'dataCriacao': dataCriacao,
       'desconto': desconto,
       'observacao': observacao,
+      'pedidoGerado': pedidoGerado,
     };
   }
 
@@ -53,6 +56,7 @@ class Orcamento {
       dataCriacao: dataCriacao,
       desconto: (map['desconto'] as num?)?.toDouble() ?? 0,
       observacao: map['observacao'] as String?,
+      pedidoGerado: map['pedidoGerado'] as bool? ?? false,
     );
   }
 }

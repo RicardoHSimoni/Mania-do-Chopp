@@ -1,18 +1,63 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/pedido.dart';
-import '../services/recolha_service.dart  ';
+import '../services/recolha_service.dart';
+
+/// Lançada quando se tenta gerar um pedido para um orçamento que já
+/// possui um pedido gerado anteriormente.
+class PedidoJaGeradoException implements Exception {
+  final String message;
+
+  PedidoJaGeradoException([
+    this.message = 'Este orçamento já possui um pedido gerado.',
+  ]);
+
+  @override
+  String toString() => message;
+}
 
 class PedidoService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   final String _collection = 'pedidos';
+  final String _orcamentosCollection = 'orcamentos';
 
   final _recolhaService = RecolhaService();
 
   // Criar pedido
   Future<void> adicionarPedido(Pedido pedido) async {
     await _firestore.collection(_collection).add(pedido.toMap());
+  }
+
+  /// Cria um pedido vinculado a um orçamento garantindo, de forma atômica,
+  /// que aquele orçamento ainda não gerou nenhum outro pedido.
+  ///
+  /// Evita a condição de corrida em que dois toques em "Gerar Pedido"
+  /// (ou duas abas/dispositivos) criariam dois pedidos para o mesmo
+  /// orçamento.
+  Future<void> criarPedidoParaOrcamento(Pedido pedido) async {
+    final orcamentoRef = _firestore
+        .collection(_orcamentosCollection)
+        .doc(pedido.orcamentoId);
+    final pedidoRef = _firestore.collection(_collection).doc();
+
+    await _firestore.runTransaction((transaction) async {
+      final orcamentoSnap = await transaction.get(orcamentoRef);
+
+      if (!orcamentoSnap.exists) {
+        throw Exception('Orçamento não encontrado.');
+      }
+
+      final dados = orcamentoSnap.data()!;
+      final pedidoJaGerado = dados['pedidoGerado'] as bool? ?? false;
+
+      if (pedidoJaGerado) {
+        throw PedidoJaGeradoException();
+      }
+
+      transaction.set(pedidoRef, pedido.toMap());
+      transaction.update(orcamentoRef, {'pedidoGerado': true});
+    });
   }
 
   // Buscar todos os pedidos

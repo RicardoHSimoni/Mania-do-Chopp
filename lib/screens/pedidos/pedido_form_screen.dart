@@ -40,11 +40,16 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
   bool _salvando = false;
   bool _possuiChopp = false;
 
+  // Reflete se este orçamento já gerou um pedido (evita reenvio duplicado
+  // mesmo antes de tentar salvar no banco).
+  late bool _pedidoJaGerado;
+
   @override
   void initState() {
     super.initState();
     _clienteController.text = widget.orcamento.clienteId ?? '';
     _dataEntrega = DateTime.now().add(const Duration(days: 1));
+    _pedidoJaGerado = widget.orcamento.pedidoGerado;
     _verificarSePossuiChopp();
   }
 
@@ -112,10 +117,11 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
 
   Future<void> _salvar() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_pedidoJaGerado) return;
 
     setState(() => _salvando = true);
     try {
-      await _pedidoService.adicionarPedido(
+      await _pedidoService.criarPedidoParaOrcamento(
         Pedido(
           id: '',
           clienteId: _clienteController.text.trim(),
@@ -138,6 +144,12 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
         );
         Navigator.of(context).pop(true);
       }
+    } on PedidoJaGeradoException catch (e) {
+      if (mounted) {
+        setState(() => _pedidoJaGerado = true);
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
+      }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -158,6 +170,31 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            if (_pedidoJaGerado)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    border: Border.all(color: Colors.orange.shade200),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: const [
+                      Icon(Icons.info_outline, color: Colors.orange),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Este orçamento já gerou um pedido. Não é possível '
+                          'gerar outro.',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             Card(
               child: ListTile(
                 title: Text('Orçamento ${widget.orcamento.id}'),
@@ -249,7 +286,7 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
-              onPressed: _salvando ? null : _salvar,
+              onPressed: (_salvando || _pedidoJaGerado) ? null : _salvar,
               icon: _salvando
                   ? const SizedBox(
                       width: 18,
@@ -257,7 +294,9 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.save),
-              label: const Text('Cadastrar pedido'),
+              label: Text(
+                _pedidoJaGerado ? 'Pedido já gerado' : 'Cadastrar pedido',
+              ),
             ),
           ],
         ),

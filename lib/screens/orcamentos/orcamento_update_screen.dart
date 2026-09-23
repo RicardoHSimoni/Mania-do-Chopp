@@ -83,6 +83,9 @@ class _OrcamentoUpdateScreenState extends State<OrcamentoUpdateScreen> {
         observacao: _observacaoController.text.isEmpty
             ? null
             : _observacaoController.text,
+        // Preserva a marca de "pedido gerado": editar o orçamento não pode
+        // reabrir a possibilidade de gerar um novo pedido para ele.
+        pedidoGerado: widget.orcamento.pedidoGerado,
       );
 
       await _orcamentoService.atualizarOrcamento(orcamentoAtualizado);
@@ -117,6 +120,30 @@ class _OrcamentoUpdateScreenState extends State<OrcamentoUpdateScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (widget.orcamento.pedidoGerado) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  border: Border.all(color: Colors.orange.shade200),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.orange),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Este orçamento já gerou um pedido. As alterações não '
+                        'afetam o pedido já criado.',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
             if (widget.orcamento.clienteId != null) ...[
               const Text(
                 'Cliente',

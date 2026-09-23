@@ -208,18 +208,30 @@ class _OrcamentosScreenState extends State<OrcamentosScreen> {
                       children: [
                         Expanded(
                           child: ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              Navigator.pushNamed(
-                                context,
-                                '/pedidos/pedido_form_screen',
-                                arguments: orcamento,
-                              );
-                            },
-                            icon: const Icon(Icons.point_of_sale_outlined),
-                            label: const Text('Gerar Pedido'),
+                            onPressed: orcamento.pedidoGerado
+                                ? null
+                                : () {
+                                    Navigator.pop(context);
+                                    Navigator.pushNamed(
+                                      context,
+                                      '/pedidos/pedido_form_screen',
+                                      arguments: orcamento,
+                                    );
+                                  },
+                            icon: Icon(
+                              orcamento.pedidoGerado
+                                  ? Icons.check_circle_outline
+                                  : Icons.point_of_sale_outlined,
+                            ),
+                            label: Text(
+                              orcamento.pedidoGerado
+                                  ? 'Pedido já gerado'
+                                  : 'Gerar Pedido',
+                            ),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
+                              backgroundColor: orcamento.pedidoGerado
+                                  ? Colors.grey
+                                  : Colors.blue,
                               foregroundColor: Colors.white,
                             ),
                           ),
@@ -271,7 +283,7 @@ class _OrcamentosScreenState extends State<OrcamentosScreen> {
         label: const Text('Novo orçamento'),
       ),
       body: StreamBuilder<List<Orcamento>>(
-        stream: _orcamentoService.listarOrcamentos(),
+        stream: _orcamentoService.listarOrcamentosSemPedido(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -324,7 +336,8 @@ class _OrcamentosScreenState extends State<OrcamentosScreen> {
                     },
                   ),
                   subtitle: Text(
-                    '${_orcamentoService.getQuantidadeTotal(orcamento.produtos)} produto(s)',
+                    '${_orcamentoService.getQuantidadeTotal(orcamento.produtos)} produto(s)'
+                    '${orcamento.pedidoGerado ? ' • Pedido gerado' : ''}',
                   ),
                   trailing: Column(
                     mainAxisAlignment: MainAxisAlignment.center,

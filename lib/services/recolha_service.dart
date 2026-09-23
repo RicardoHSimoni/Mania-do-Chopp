@@ -17,7 +17,7 @@ class RecolhaService {
   Stream<List<Recolha>> listarRecolhas() {
     return _firestore
         .collection(_collection)
-        .orderBy('data', descending: true)
+        .orderBy('dataRecolha', descending: true)
         .snapshots()
         .map((snapshot) {
           return snapshot.docs
