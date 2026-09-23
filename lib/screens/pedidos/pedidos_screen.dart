@@ -20,8 +20,10 @@ class _PedidosScreenState extends State<PedidosScreen> {
   final _pesquisaController = TextEditingController();
   final Map<String, Future<Cliente?>> _clientesEmCarregamento = {};
   String _termoPesquisa = '';
-  bool _filtrarPagos = false;
-  bool _filtrarEntregues = false;
+
+  // null = Todos, true = Sim, false = Não
+  bool? _filtroPago;
+  bool? _filtroEntregue;
 
   @override
   void dispose() {
@@ -42,8 +44,10 @@ class _PedidosScreenState extends State<PedidosScreen> {
   }
 
   bool _passaNosFiltros(Pedido pedido, Cliente? cliente) {
-    if (_filtrarPagos && !pedido.pago) return false;
-    if (_filtrarEntregues && !pedido.entregue) return false;
+    if (_filtroPago != null && pedido.pago != _filtroPago) return false;
+    if (_filtroEntregue != null && pedido.entregue != _filtroEntregue) {
+      return false;
+    }
     return _correspondePesquisa(pedido, cliente);
   }
 
@@ -324,56 +328,66 @@ class _PedidosScreenState extends State<PedidosScreen> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
                     child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
                       children: [
                         SizedBox(
                           width: 160,
-                          child: DropdownButtonFormField<bool>(
+                          child: DropdownButtonFormField<bool?>(
                             decoration: const InputDecoration(
                               labelText: 'Pagamentos',
                               border: OutlineInputBorder(),
                               isDense: true,
                             ),
-                            initialValue: _filtrarPagos,
+                            initialValue: _filtroPago,
                             items: const [
                               DropdownMenuItem(
-                                value: false,
+                                value: null,
                                 child: Text('Todos'),
                               ),
                               DropdownMenuItem(
                                 value: true,
                                 child: Text('Pagos'),
                               ),
+                              DropdownMenuItem(
+                                value: false,
+                                child: Text('Não pagos'),
+                              ),
                             ],
                             onChanged: (valor) {
                               setState(() {
-                                _filtrarPagos = valor ?? false;
+                                _filtroPago = valor;
                               });
                             },
                           ),
                         ),
                         SizedBox(
-                          width: 160,
-                          child: DropdownButtonFormField<bool>(
+                          width: 164,
+                          child: DropdownButtonFormField<bool?>(
                             decoration: const InputDecoration(
                               labelText: 'Entrega',
                               border: OutlineInputBorder(),
                               isDense: true,
                             ),
-                            initialValue: _filtrarEntregues,
+                            initialValue: _filtroEntregue,
                             items: const [
                               DropdownMenuItem(
-                                value: false,
+                                value: null,
                                 child: Text('Todos'),
                               ),
                               DropdownMenuItem(
                                 value: true,
                                 child: Text('Entregues'),
                               ),
+                              DropdownMenuItem(
+                                value: false,
+                                child: Text('Não Entregues'),
+                              ),
                             ],
                             onChanged: (valor) {
-                              setState(
-                                () => _filtrarEntregues = valor ?? false,
-                              );
+                              setState(() {
+                                _filtroEntregue = valor;
+                              });
                             },
                           ),
                         ),
