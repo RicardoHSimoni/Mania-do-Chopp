@@ -22,6 +22,7 @@ class Recolha {
       'endereco': endereco,
       'dataRecolha': dataRecolha.toIso8601String(),
       'recolhida': recolhida,
+      'observacao': observacao,
     };
   }
 

@@ -26,6 +26,14 @@ class RecolhaService {
         });
   }
 
+  // Atualizar recolha (marcar como recolhida, reagendar, editar observação)
+  Future<void> atualizarRecolha(Recolha recolha) async {
+    await _firestore
+        .collection(_collection)
+        .doc(recolha.id)
+        .update(recolha.toMap());
+  }
+
   Future<void> criarRecolha(Pedido pedido) async {
     final recolhaExistente = await _firestore
         .collection(_collection)
