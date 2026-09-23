@@ -36,7 +36,6 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
   late DateTime _dataEntrega;
   Cliente? _selectedCliente;
   List<int> chopeirasSelecionadas = [];
-  bool _entregue = false;
   bool _pago = false;
   bool _salvando = false;
   bool _possuiChopp = false;
@@ -114,8 +113,6 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
   Future<void> _salvar() async {
     if (!_formKey.currentState!.validate()) return;
 
-    print('ID do orçamento: ${widget.orcamento.id}');
-
     setState(() => _salvando = true);
     try {
       await _pedidoService.adicionarPedido(
@@ -128,7 +125,7 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
           observacoes: _observacoesController.text.trim(),
           chopeirasSelecionadas: chopeirasSelecionadas,
           valorTotal: widget.orcamento.valorTotal,
-          entregue: _entregue,
+          entregue: false,
           pago: _pago,
         ),
       );
@@ -243,12 +240,6 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
               controller: _observacoesController,
               decoration: const InputDecoration(labelText: 'Observações'),
               maxLines: 3,
-            ),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Pedido entregue'),
-              value: _entregue,
-              onChanged: (value) => setState(() => _entregue = value),
             ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,

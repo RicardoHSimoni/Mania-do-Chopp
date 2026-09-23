@@ -1,11 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/pedido.dart';
+import '../services/recolha_service.dart  ';
 
 class PedidoService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   final String _collection = 'pedidos';
+
+  final _recolhaService = RecolhaService();
 
   // Criar pedido
   Future<void> adicionarPedido(Pedido pedido) async {
@@ -87,6 +90,16 @@ class PedidoService {
       await _firestore.collection('produtos').doc(produtoId).update({
         'quantidade': estoqueAtual - quantidadeVendida,
       });
+    }
+  }
+
+  Future<void> marcarComoEntregue(Pedido pedido) async {
+    await _firestore.collection('pedidos').doc(pedido.id).update({
+      'entregue': true,
+    });
+
+    if (pedido.chopeirasSelecionadas?.isNotEmpty == true) {
+      await _recolhaService.criarRecolha(pedido);
     }
   }
 }

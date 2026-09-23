@@ -4,6 +4,7 @@ import '../../models/cliente.dart';
 import '../../models/pedido.dart';
 import '../../services/cliente_service.dart';
 import '../../services/pedido_service.dart';
+import '../../services/recolha_service.dart';
 
 class PedidosScreen extends StatefulWidget {
   const PedidosScreen({super.key});
@@ -15,6 +16,7 @@ class PedidosScreen extends StatefulWidget {
 class _PedidosScreenState extends State<PedidosScreen> {
   final _pedidoService = PedidoService();
   final _clienteService = ClienteService();
+  final _recolhaService = RecolhaService();
   final _pesquisaController = TextEditingController();
   final Map<String, Future<Cliente?>> _clientesEmCarregamento = {};
   String _termoPesquisa = '';
@@ -427,6 +429,7 @@ class PedidoDetalheScreen extends StatefulWidget {
 
 class _PedidoDetalheScreenState extends State<PedidoDetalheScreen> {
   final _pedidoService = PedidoService();
+  final _recolhaService = RecolhaService();
   late Pedido _pedido;
 
   @override
@@ -466,6 +469,9 @@ class _PedidoDetalheScreenState extends State<PedidoDetalheScreen> {
     setState(() => _pedido = pedidoAtualizado);
     try {
       await _pedidoService.atualizarPedido(pedidoAtualizado);
+      if (pedidoAnterior.entregue != pedidoAtualizado.entregue) {
+        _recolhaService.criarRecolha(pedidoAtualizado);
+      }
     } catch (erro) {
       if (!mounted) return;
       setState(() => _pedido = pedidoAnterior);
