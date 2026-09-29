@@ -505,10 +505,65 @@ class _PedidoDetalheScreenState extends State<PedidoDetalheScreen> {
     }
   }
 
+  Future<void> _excluirPedido() async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Excluir pedido'),
+          content: const Text(
+            'Deseja realmente excluir este pedido? '
+            'Essa ação não poderá ser desfeita.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text('Excluir'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmar != true) return;
+
+    try {
+      await _pedidoService.excluirPedido(_pedido.id);
+
+      if (!mounted) return;
+
+      Navigator.of(context).pop();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pedido excluído com sucesso.')),
+      );
+    } catch (erro) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro ao excluir pedido: $erro')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Detalhes do pedido')),
+      appBar: AppBar(
+        title: const Text('Detalhes do pedido'),
+        actions: [
+          IconButton(
+            tooltip: 'Excluir pedido',
+            icon: const Icon(Icons.delete_outline),
+            onPressed: _excluirPedido,
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
