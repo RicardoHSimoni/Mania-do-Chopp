@@ -24,6 +24,7 @@ import 'screens/clientes/cliente_update_screen.dart';
 import 'screens/produtos/produto_screen.dart';
 import 'screens/produtos/produto_form_screen.dart';
 import 'screens/produtos/produto_update_screen.dart';
+import 'screens/recolhas/recolha_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -95,6 +96,7 @@ class MyApp extends StatelessWidget {
                 Produto(id: '', nome: '', tipo: TipoProduto.outro, preco: 0.0),
           );
         },
+        '/recolhas/recolha_screen': (context) => const RecolhasPage(),
         '/pedidos/pedido_screen': (context) => const PedidosScreen(),
         '/pedidos/pedido_form_screen': (context) {
           final orcamento =

@@ -109,6 +109,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   Navigator.pushNamed(context, '/produtos/produto_screen');
                 },
               ),
+              ListTile(
+                leading: const Icon(Icons.local_bar_outlined),
+                title: const Text('Recolhas'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/recolhas/recolha_screen');
+                },
+              ),
             ],
           ),
         ),
