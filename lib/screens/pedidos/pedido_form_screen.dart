@@ -4,6 +4,7 @@ import '../../models/orcamento.dart';
 import '../../models/pedido.dart';
 import '../../models/chopeira.dart';
 import '../../models/cliente.dart';
+import '../../services/cliente_service.dart';
 import '../../services/pedido_service.dart';
 import '../../services/produto_service.dart';
 import '../chopeiras/chopeira_search_screen.dart';
@@ -12,13 +13,11 @@ import '../clientes/cliente_search_screen.dart';
 class PedidoFormScreen extends StatefulWidget {
   final Orcamento orcamento;
   final VoidCallback? onEditarOrcamento;
-  final Future<String?> Function()? onAdicionarCliente;
 
   const PedidoFormScreen({
     super.key,
     required this.orcamento,
     this.onEditarOrcamento,
-    this.onAdicionarCliente,
   });
 
   @override
@@ -27,11 +26,11 @@ class PedidoFormScreen extends StatefulWidget {
 
 class _PedidoFormScreenState extends State<PedidoFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _clienteController = TextEditingController();
   final _enderecoController = TextEditingController();
   final _observacoesController = TextEditingController();
   final _pedidoService = PedidoService();
   final _produtoService = ProdutoService();
+  final _clienteService = ClienteService();
 
   late DateTime _dataEntrega;
   Cliente? _selectedCliente;
@@ -39,6 +38,7 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
   bool _pago = false;
   bool _salvando = false;
   bool _possuiChopp = false;
+  bool _carregandoCliente = false;
 
   // Reflete se este orçamento já gerou um pedido (evita reenvio duplicado
   // mesmo antes de tentar salvar no banco).
@@ -47,18 +47,47 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
   @override
   void initState() {
     super.initState();
-    _clienteController.text = widget.orcamento.clienteId ?? '';
     _dataEntrega = DateTime.now().add(const Duration(days: 1));
     _pedidoJaGerado = widget.orcamento.pedidoGerado;
     _verificarSePossuiChopp();
+
+    final clienteId = widget.orcamento.clienteId;
+    if (clienteId != null && clienteId.isNotEmpty) {
+      _carregarCliente(clienteId);
+    }
   }
 
   @override
   void dispose() {
-    _clienteController.dispose();
     _enderecoController.dispose();
     _observacoesController.dispose();
     super.dispose();
+  }
+
+  // Busca o cliente vinculado ao orçamento para exibir o nome.
+  // Se não encontrar, o usuário poderá selecioná-lo pelo botão.
+  Future<void> _carregarCliente(String clienteId) async {
+    setState(() => _carregandoCliente = true);
+    try {
+      final cliente = await _clienteService.buscarCliente(clienteId);
+      if (!mounted) return;
+      setState(() => _selectedCliente = cliente);
+    } catch (_) {
+      // Mantém _selectedCliente nulo e exibe o botão de seleção.
+    } finally {
+      if (mounted) setState(() => _carregandoCliente = false);
+    }
+  }
+
+  // Volta para a tela anterior (cadastro do orçamento). Se quem abriu esta
+  // tela definiu um comportamento próprio, ele tem prioridade.
+  void _editarProdutos() {
+    final callback = widget.onEditarOrcamento;
+    if (callback != null) {
+      callback();
+      return;
+    }
+    Navigator.of(context).maybePop();
   }
 
   Future<void> _escolherData() async {
@@ -106,6 +135,7 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
       final tipo = await _produtoService.buscarTipoProduto(item.produtoId);
 
       if (tipo == 'chopp') {
+        if (!mounted) return;
         setState(() {
           _possuiChopp = true;
         });
@@ -116,15 +146,23 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
   }
 
   Future<void> _salvar() async {
-    if (!_formKey.currentState!.validate()) return;
     if (_pedidoJaGerado) return;
+
+    if (_selectedCliente == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecione um cliente para o pedido.')),
+      );
+      return;
+    }
+
+    if (!_formKey.currentState!.validate()) return;
 
     setState(() => _salvando = true);
     try {
       await _pedidoService.criarPedidoParaOrcamento(
         Pedido(
           id: '',
-          clienteId: _clienteController.text.trim(),
+          clienteId: _selectedCliente!.id,
           orcamentoId: widget.orcamento.id,
           dataEntrega: _dataEntrega,
           enderecoEntrega: _enderecoController.text.trim(),
@@ -136,6 +174,9 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
         ),
       );
       if (mounted) {
+        await _pedidoService.atualizarQuantidadeProdutosVendidos(
+          widget.orcamento.id,
+        );
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Pedido cadastrado com sucesso!')),
         );
@@ -156,6 +197,44 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
     } finally {
       if (mounted) setState(() => _salvando = false);
     }
+  }
+
+  // Campo de cliente: texto com o nome (somente leitura) quando existe;
+  // caso contrário, um botão que abre a busca de clientes.
+  Widget _buildCliente() {
+    if (_carregandoCliente) {
+      return const InputDecorator(
+        decoration: InputDecoration(labelText: 'Cliente'),
+        child: Text('Carregando...'),
+      );
+    }
+
+    final cliente = _selectedCliente;
+    if (cliente != null) {
+      return OutlinedButton.icon(
+        onPressed: null, // Desabilita o clique e o efeito visual de toque
+        icon: const Icon(Icons.person),
+        label: Text(cliente.nome),
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(double.infinity, 56),
+          alignment: Alignment.centerLeft,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
+    }
+
+    return OutlinedButton.icon(
+      onPressed: _selecionarCliente,
+      icon: const Icon(Icons.person_search),
+      label: const Text('Selecionar cliente'),
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(double.infinity, 56),
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
   }
 
   @override
@@ -199,30 +278,14 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
                   'Total: R\$ ${widget.orcamento.valorTotal.toStringAsFixed(2)}',
                 ),
                 trailing: TextButton.icon(
-                  onPressed: widget.onEditarOrcamento,
+                  onPressed: _editarProdutos,
                   icon: const Icon(Icons.edit),
                   label: const Text('Editar produtos'),
                 ),
               ),
             ),
             const SizedBox(height: 16),
-            TextFormField(
-              controller: _clienteController,
-              decoration: InputDecoration(
-                labelText: 'Cliente',
-                hintText: 'ID do cliente',
-                suffixIcon: widget.onAdicionarCliente == null
-                    ? null
-                    : IconButton(
-                        icon: const Icon(Icons.person_add),
-                        tooltip: 'Adicionar cliente',
-                        onPressed: _selecionarCliente,
-                      ),
-              ),
-              validator: (value) => value == null || value.trim().isEmpty
-                  ? 'Informe ou adicione um cliente'
-                  : null,
-            ),
+            _buildCliente(),
             const SizedBox(height: 12),
             TextFormField(
               controller: _enderecoController,

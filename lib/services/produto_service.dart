@@ -28,6 +28,18 @@ class ProdutoService {
         });
   }
 
+  // Buscar todos os produtos (sem limite), para telas de seleção/pesquisa
+  Future<List<Produto>> buscarTodosProdutos() async {
+    final snapshot = await _firestore
+        .collection(_collection)
+        .orderBy('nome')
+        .get();
+
+    return snapshot.docs
+        .map((doc) => Produto.fromMap(doc.data(), doc.id))
+        .toList();
+  }
+
   // Buscar um produto pelo ID
   Future<Produto?> buscarProduto(String id) async {
     final doc = await _firestore.collection(_collection).doc(id).get();

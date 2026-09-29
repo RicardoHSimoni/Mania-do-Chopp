@@ -6,9 +6,9 @@ import '../../models/produto.dart';
 import '../../models/orcamento.dart';
 import '../../models/orcamento_item.dart';
 import '../../services/cliente_service.dart';
-import '../../services/produto_service.dart';
 import '../../services/orcamento_service.dart';
 import '../pedidos/pedido_form_screen.dart';
+import '../produtos/produto_search_screen.dart';
 
 class OrcamentoFormScreen extends StatefulWidget {
   const OrcamentoFormScreen({Key? key}) : super(key: key);
@@ -19,7 +19,6 @@ class OrcamentoFormScreen extends StatefulWidget {
 
 class _OrcamentoFormScreenState extends State<OrcamentoFormScreen> {
   late ClienteService _clienteService;
-  late ProdutoService _produtoService;
   late OrcamentoService _orcamentoService;
 
   Cliente? _selectedCliente;
@@ -52,6 +51,18 @@ class _OrcamentoFormScreenState extends State<OrcamentoFormScreen> {
     });
   }
 
+  // Abre a tela de seleção de produtos e adiciona o produto escolhido.
+  Future<void> _selecionarProduto() async {
+    final produto = await Navigator.push<Produto>(
+      context,
+      MaterialPageRoute(builder: (context) => const ProdutoSearchScreen()),
+    );
+
+    if (produto == null || !mounted) return;
+
+    addProduct(produto);
+  }
+
   Orcamento get currentOrcamento => Orcamento(
     id: '',
     clienteId: _selectedCliente?.id,
@@ -68,7 +79,6 @@ class _OrcamentoFormScreenState extends State<OrcamentoFormScreen> {
   void initState() {
     super.initState();
     _clienteService = ClienteService();
-    _produtoService = ProdutoService();
     _orcamentoService = OrcamentoService();
   }
 
@@ -238,49 +248,18 @@ class _OrcamentoFormScreenState extends State<OrcamentoFormScreen> {
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 12),
-            StreamBuilder<List<Produto>>(
-              stream: _produtoService.listarProdutos(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (snapshot.hasError) {
-                  return Center(child: Text('Erro: ${snapshot.error}'));
-                }
-
-                final produtos = snapshot.data ?? [];
-
-                if (produtos.isEmpty) {
-                  return const Center(child: Text('Nenhum produto disponível'));
-                }
-
-                return ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: produtos.length,
-                  itemBuilder: (context, index) {
-                    final produto = produtos[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.add),
-                        label: Text(
-                          '${produto.nome} - R\$ ${produto.preco.toStringAsFixed(2)}',
-                        ),
-                        onPressed: () => addProduct(produto),
-                        style: ElevatedButton.styleFrom(
-                          alignment: Alignment.centerLeft,
-                          padding: const EdgeInsets.all(12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
+            OutlinedButton.icon(
+              onPressed: _selecionarProduto,
+              icon: const Icon(Icons.add_shopping_cart),
+              label: const Text('Selecionar produto'),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 56),
+                alignment: Alignment.centerLeft,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
             ),
             const SizedBox(height: 24),
             if (products.isNotEmpty) ...[
