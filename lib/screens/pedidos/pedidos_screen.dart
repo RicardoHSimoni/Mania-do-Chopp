@@ -16,14 +16,22 @@ class PedidosScreen extends StatefulWidget {
 class _PedidosScreenState extends State<PedidosScreen> {
   final _pedidoService = PedidoService();
   final _clienteService = ClienteService();
-  final _recolhaService = RecolhaService();
   final _pesquisaController = TextEditingController();
   final Map<String, Future<Cliente?>> _clientesEmCarregamento = {};
+  late final Stream<List<Pedido>> _pedidosStream;
+  List<Pedido>? _pedidosCarregados;
+  Future<List<Cliente?>>? _clientesFuture;
   String _termoPesquisa = '';
 
   // null = Todos, true = Sim, false = Não
   bool? _filtroPago;
   bool? _filtroEntregue;
+
+  @override
+  void initState() {
+    super.initState();
+    _pedidosStream = _pedidoService.listarPedidos();
+  }
 
   @override
   void dispose() {
@@ -255,7 +263,7 @@ class _PedidosScreenState extends State<PedidosScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Pedidos')),
       body: StreamBuilder<List<Pedido>>(
-        stream: _pedidoService.listarPedidos(),
+        stream: _pedidosStream,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -271,12 +279,14 @@ class _PedidosScreenState extends State<PedidosScreen> {
           }
 
           final pedidos = snapshot.data ?? [];
+          if (!identical(_pedidosCarregados, pedidos)) {
+            _pedidosCarregados = pedidos;
+            _clientesFuture = Future.wait(
+              pedidos.map((pedido) => _buscarCliente(pedido.clienteId)),
+            );
+          }
           return FutureBuilder<List<Cliente?>>(
-            future: Future.wait(
-              pedidos.map((pedido) {
-                return _buscarCliente(pedido.clienteId);
-              }),
-            ),
+            future: _clientesFuture,
             builder: (context, clientesSnapshot) {
               if (clientesSnapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
