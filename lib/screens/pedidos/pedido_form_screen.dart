@@ -97,7 +97,37 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 3650)),
     );
-    if (data != null) setState(() => _dataEntrega = data);
+
+    if (data != null) {
+      setState(() {
+        _dataEntrega = DateTime(
+          data.year,
+          data.month,
+          data.day,
+          _dataEntrega.hour,
+          _dataEntrega.minute,
+        );
+      });
+    }
+  }
+
+  Future<void> _escolherHora() async {
+    final hora = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_dataEntrega),
+    );
+
+    if (hora != null) {
+      setState(() {
+        _dataEntrega = DateTime(
+          _dataEntrega.year,
+          _dataEntrega.month,
+          _dataEntrega.day,
+          hora.hour,
+          hora.minute,
+        );
+      });
+    }
   }
 
   Future<void> _selecionarChopeiras() async {
@@ -332,6 +362,17 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
               ),
               trailing: const Icon(Icons.calendar_month),
               onTap: _escolherData,
+            ),
+
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Hora de entrega'),
+              subtitle: Text(
+                '${_dataEntrega.hour.toString().padLeft(2, '0')}:'
+                '${_dataEntrega.minute.toString().padLeft(2, '0')}',
+              ),
+              trailing: const Icon(Icons.access_time),
+              onTap: _escolherHora,
             ),
             TextFormField(
               controller: _observacoesController,

@@ -826,7 +826,9 @@ class _PedidoDetalheScreenState extends State<PedidoDetalheScreen> {
 
   String _formatarData(DateTime data) {
     return '${data.day.toString().padLeft(2, '0')}/'
-        '${data.month.toString().padLeft(2, '0')}/${data.year}';
+        '${data.month.toString().padLeft(2, '0')}/${data.year} '
+        '${data.hour.toString().padLeft(2, '0')}:'
+        '${data.minute.toString().padLeft(2, '0')}';
   }
 
   Widget _campo(String titulo, String valor, IconData icone) {
@@ -963,7 +965,7 @@ class _PedidoDetalheScreenState extends State<PedidoDetalheScreen> {
                   Icons.attach_money_outlined,
                 ),
                 _campo(
-                  'Data de entrega',
+                  'Data e hora de entrega',
                   _formatarData(_pedido.dataEntrega),
                   Icons.calendar_month,
                 ),

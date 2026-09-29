@@ -297,11 +297,28 @@ class _ProdutoScreenState extends State<ProdutoScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () =>
-            Navigator.pushNamed(context, '/produtos/produto_form_screen'),
-        backgroundColor: Colors.blue,
-        child: const Icon(Icons.add),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          FloatingActionButton.extended(
+            heroTag: 'fab_compra',
+            onPressed: () =>
+                Navigator.pushNamed(context, '/compras/compra_form_screen'),
+            backgroundColor: Colors.blue,
+            icon: const Icon(Icons.add_shopping_cart),
+            label: const Text('Compra'),
+          ),
+          const SizedBox(height: 12),
+          FloatingActionButton.extended(
+            heroTag: 'fab_novo_produto',
+            onPressed: () =>
+                Navigator.pushNamed(context, '/produtos/produto_form_screen'),
+            backgroundColor: Colors.blue,
+            icon: const Icon(Icons.add_box),
+            label: const Text('Novo'),
+          ),
+        ],
       ),
     );
   }

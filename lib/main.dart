@@ -26,6 +26,8 @@ import 'screens/produtos/produto_form_screen.dart';
 import 'screens/produtos/produto_update_screen.dart';
 import 'screens/recolhas/recolha_screen.dart';
 
+import 'package:mania_do_chopp/screens/compras/compra_form_screen.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -115,6 +117,7 @@ class MyApp extends StatelessWidget {
                 ),
           );
         },
+        '/compras/compra_form_screen': (context) => const CompraFormScreen(),
       },
     );
   }
