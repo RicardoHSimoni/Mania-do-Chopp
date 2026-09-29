@@ -136,9 +136,6 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
         ),
       );
       if (mounted) {
-        await _pedidoService.atualizarQuantidadeProdutosVendidos(
-          widget.orcamento.id,
-        );
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Pedido cadastrado com sucesso!')),
         );

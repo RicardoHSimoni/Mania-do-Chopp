@@ -23,9 +23,19 @@ class _PedidosScreenState extends State<PedidosScreen> {
   Future<List<Cliente?>>? _clientesFuture;
   String _termoPesquisa = '';
 
-  // null = Todos, true = Sim, false = Não
-  bool? _filtroPago;
-  bool? _filtroEntregue;
+  // Filtros de status (caixas de seleção).
+  // Se nenhuma ou as duas opções de um grupo estiverem marcadas,
+  // o grupo não restringe a lista.
+  bool _filtroPagos = false;
+  bool _filtroEmAberto = false;
+  bool _filtroEntregues = false;
+  bool _filtroNaoEntregues = false;
+
+  // Filtro por período usando a data de entrega.
+  DateTimeRange? _filtroPeriodo;
+
+  // Indica que, inicialmente, o filtro é "a partir de hoje".
+  bool _aPartirDeHoje = true;
 
   @override
   void initState() {
@@ -51,12 +61,222 @@ class _PedidosScreenState extends State<PedidosScreen> {
     );
   }
 
+  int get _quantidadeFiltrosAtivos {
+    var total = 0;
+    if (_filtroPagos) total++;
+    if (_filtroEmAberto) total++;
+    if (_filtroEntregues) total++;
+    if (_filtroNaoEntregues) total++;
+    if (_filtroPeriodo != null) total++;
+    return total;
+  }
+
   bool _passaNosFiltros(Pedido pedido, Cliente? cliente) {
-    if (_filtroPago != null && pedido.pago != _filtroPago) return false;
-    if (_filtroEntregue != null && pedido.entregue != _filtroEntregue) {
+    // Pagamento: só restringe quando exatamente uma opção está marcada.
+    if (_filtroPagos != _filtroEmAberto && pedido.pago != _filtroPagos) {
       return false;
     }
+
+    // Entrega: só restringe quando exatamente uma opção está marcada.
+    if (_filtroEntregues != _filtroNaoEntregues &&
+        pedido.entregue != _filtroEntregues) {
+      return false;
+    }
+
+    // Filtro de data.
+    final data = DateUtils.dateOnly(pedido.dataEntrega);
+
+    if (_aPartirDeHoje) {
+      final hoje = DateUtils.dateOnly(DateTime.now());
+
+      if (data.isBefore(hoje)) {
+        return false;
+      }
+    } else {
+      final periodo = _filtroPeriodo;
+
+      if (periodo != null) {
+        final inicio = DateUtils.dateOnly(periodo.start);
+        final fim = DateUtils.dateOnly(periodo.end);
+
+        if (data.isBefore(inicio) || data.isAfter(fim)) {
+          return false;
+        }
+      }
+    }
+
     return _correspondePesquisa(pedido, cliente);
+  }
+
+  Future<void> _abrirFiltros() async {
+    var pagos = _filtroPagos;
+    var emAberto = _filtroEmAberto;
+    var entregues = _filtroEntregues;
+    var naoEntregues = _filtroNaoEntregues;
+    var periodo = _filtroPeriodo;
+    var aPartirDeHoje = _aPartirDeHoje;
+
+    final aplicar = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Filtrar pedidos',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Pagamento',
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      title: const Text('Pagos'),
+                      value: pagos,
+                      onChanged: (valor) =>
+                          setSheetState(() => pagos = valor ?? false),
+                    ),
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      title: const Text('Em aberto'),
+                      value: emAberto,
+                      onChanged: (valor) =>
+                          setSheetState(() => emAberto = valor ?? false),
+                    ),
+                    const Divider(),
+                    Text(
+                      'Entrega',
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      title: const Text('Entregues'),
+                      value: entregues,
+                      onChanged: (valor) =>
+                          setSheetState(() => entregues = valor ?? false),
+                    ),
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      title: const Text('Não entregues'),
+                      value: naoEntregues,
+                      onChanged: (valor) =>
+                          setSheetState(() => naoEntregues = valor ?? false),
+                    ),
+                    const Divider(),
+                    Text(
+                      'Período (data de entrega)',
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.date_range),
+                            label: Text(
+                              aPartirDeHoje
+                                  ? 'A partir de hoje'
+                                  : periodo == null
+                                  ? 'Selecionar período'
+                                  : '${_formatarData(periodo!.start)} - '
+                                        '${_formatarData(periodo!.end)}',
+                            ),
+                            onPressed: () async {
+                              final agora = DateTime.now();
+
+                              final selecionado = await showDateRangePicker(
+                                context: context,
+                                firstDate: DateTime(agora.year - 5),
+                                lastDate: DateTime(agora.year + 5),
+                                initialDateRange: periodo,
+                              );
+
+                              if (selecionado != null) {
+                                setSheetState(() {
+                                  periodo = selecionado;
+                                  aPartirDeHoje = false;
+                                });
+                              }
+                            },
+                          ),
+                        ),
+                        if (!aPartirDeHoje)
+                          IconButton(
+                            tooltip: 'Voltar para a partir de hoje',
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              setSheetState(() {
+                                periodo = null;
+                                aPartirDeHoje = true;
+                              });
+                            },
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () {
+                              final hoje = DateUtils.dateOnly(DateTime.now());
+                              setSheetState(() {
+                                pagos = false;
+                                emAberto = false;
+                                entregues = false;
+                                naoEntregues = false;
+                                // Ao limpar, volta para o padrão:
+                                // pedidos de hoje em diante.
+                                periodo = null;
+                                aPartirDeHoje = true;
+                              });
+                            },
+                            child: const Text('Limpar'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: () =>
+                                Navigator.of(sheetContext).pop(true),
+                            child: const Text('Aplicar'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (aplicar != true || !mounted) return;
+
+    setState(() {
+      _filtroPagos = pagos;
+      _filtroEmAberto = emAberto;
+      _filtroEntregues = entregues;
+      _filtroNaoEntregues = naoEntregues;
+      _filtroPeriodo = periodo;
+      _aPartirDeHoje = aPartirDeHoje;
+    });
   }
 
   bool _correspondePesquisa(Pedido pedido, Cliente? cliente) {
@@ -308,97 +528,47 @@ class _PedidosScreenState extends State<PedidosScreen> {
                 }
               }
 
+              final filtrosAtivos = _quantidadeFiltrosAtivos;
+
               return Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                    child: TextField(
-                      controller: _pesquisaController,
-                      onChanged: (valor) {
-                        setState(() => _termoPesquisa = valor);
-                      },
-                      decoration: InputDecoration(
-                        labelText: 'Pesquisar pedidos',
-                        hintText: 'Nome, CPF, data ou entregue:true pago:false',
-                        prefixIcon: const Icon(Icons.search),
-                        suffixIcon: _termoPesquisa.isEmpty
-                            ? null
-                            : IconButton(
-                                tooltip: 'Limpar pesquisa',
-                                icon: const Icon(Icons.clear),
-                                onPressed: () {
-                                  _pesquisaController.clear();
-                                  setState(() => _termoPesquisa = '');
-                                },
-                              ),
-                        border: const OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
+                    padding: const EdgeInsets.fromLTRB(16, 16, 8, 8),
+                    child: Row(
                       children: [
-                        SizedBox(
-                          width: 160,
-                          child: DropdownButtonFormField<bool?>(
-                            decoration: const InputDecoration(
-                              labelText: 'Pagamentos',
-                              border: OutlineInputBorder(),
-                              isDense: true,
-                            ),
-                            initialValue: _filtroPago,
-                            items: const [
-                              DropdownMenuItem(
-                                value: null,
-                                child: Text('Todos'),
-                              ),
-                              DropdownMenuItem(
-                                value: true,
-                                child: Text('Pagos'),
-                              ),
-                              DropdownMenuItem(
-                                value: false,
-                                child: Text('Não pagos'),
-                              ),
-                            ],
+                        Expanded(
+                          child: TextField(
+                            controller: _pesquisaController,
                             onChanged: (valor) {
-                              setState(() {
-                                _filtroPago = valor;
-                              });
+                              setState(() => _termoPesquisa = valor);
                             },
+                            decoration: InputDecoration(
+                              labelText: 'Pesquisar pedidos',
+                              hintText:
+                                  'Nome, CPF, data ou entregue:true pago:false',
+                              prefixIcon: const Icon(Icons.search),
+                              suffixIcon: _termoPesquisa.isEmpty
+                                  ? null
+                                  : IconButton(
+                                      tooltip: 'Limpar pesquisa',
+                                      icon: const Icon(Icons.clear),
+                                      onPressed: () {
+                                        _pesquisaController.clear();
+                                        setState(() => _termoPesquisa = '');
+                                      },
+                                    ),
+                              border: const OutlineInputBorder(),
+                            ),
                           ),
                         ),
-                        SizedBox(
-                          width: 164,
-                          child: DropdownButtonFormField<bool?>(
-                            decoration: const InputDecoration(
-                              labelText: 'Entrega',
-                              border: OutlineInputBorder(),
-                              isDense: true,
-                            ),
-                            initialValue: _filtroEntregue,
-                            items: const [
-                              DropdownMenuItem(
-                                value: null,
-                                child: Text('Todos'),
-                              ),
-                              DropdownMenuItem(
-                                value: true,
-                                child: Text('Entregues'),
-                              ),
-                              DropdownMenuItem(
-                                value: false,
-                                child: Text('Não Entregues'),
-                              ),
-                            ],
-                            onChanged: (valor) {
-                              setState(() {
-                                _filtroEntregue = valor;
-                              });
-                            },
+                        const SizedBox(width: 4),
+                        IconButton(
+                          tooltip: 'Filtrar pedidos',
+                          onPressed: _abrirFiltros,
+                          icon: Badge(
+                            isLabelVisible: filtrosAtivos > 0,
+                            label: Text('$filtrosAtivos'),
+                            child: const Icon(Icons.filter_list),
                           ),
                         ),
                       ],
@@ -495,6 +665,9 @@ class _PedidoDetalheScreenState extends State<PedidoDetalheScreen> {
       await _pedidoService.atualizarPedido(pedidoAtualizado);
       if (pedidoAnterior.entregue != pedidoAtualizado.entregue) {
         _recolhaService.criarRecolha(pedidoAtualizado);
+        await _pedidoService.atualizarQuantidadeProdutosVendidos(
+          pedidoAtualizado.orcamentoId,
+        );
       }
     } catch (erro) {
       if (!mounted) return;
