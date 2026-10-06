@@ -8,7 +8,7 @@ import 'models/orcamento.dart';
 
 import 'firebase_options.dart';
 
-import 'screens/home/home_screen.dart';
+import 'screens/login/login_screen.dart';
 
 import 'screens/orcamentos/orcamento_form_screen.dart';
 import 'screens/orcamentos/orcamentos_screen.dart';
@@ -45,7 +45,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: HomeScreen(),
+      home: const AuthGate(),
       routes: {
         '/orcamentos/orcamento_form_screen': (context) =>
             const OrcamentoFormScreen(),
