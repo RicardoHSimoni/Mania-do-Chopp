@@ -2,6 +2,7 @@
 class Recolha {
   final String id;
   final String pedidoId;
+  final int pedidoCodigo;
   final String endereco; //endereço de recolha da chopeira
   final DateTime dataRecolha;
   final bool recolhida; //indica se a chopeira foi recolhida ou não
@@ -10,15 +11,20 @@ class Recolha {
   Recolha({
     required this.id,
     required this.pedidoId,
+    this.pedidoCodigo = 0,
     required this.endereco,
     required this.dataRecolha,
     required this.recolhida,
     this.observacao,
   });
 
+  String get pedidoCodigoFormatado =>
+      pedidoCodigo > 0 ? pedidoCodigo.toString().padLeft(6, '0') : 'Sem código';
+
   Map<String, dynamic> toMap() {
     return {
       'pedidoId': pedidoId,
+      'pedidoCodigo': pedidoCodigo,
       'endereco': endereco,
       'dataRecolha': dataRecolha.toIso8601String(),
       'recolhida': recolhida,
@@ -30,6 +36,7 @@ class Recolha {
     return Recolha(
       id: id,
       pedidoId: map['pedidoId'],
+      pedidoCodigo: (map['pedidoCodigo'] as num?)?.toInt() ?? 0,
       endereco: map['endereco'],
       dataRecolha: DateTime.parse(map['dataRecolha']),
       recolhida: map['recolhida'] ?? false,

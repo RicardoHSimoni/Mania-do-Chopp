@@ -75,6 +75,7 @@ class _OrcamentoUpdateScreenState extends State<OrcamentoUpdateScreen> {
     try {
       final orcamentoAtualizado = Orcamento(
         id: widget.orcamento.id,
+        codigo: widget.orcamento.codigo,
         clienteId: widget.orcamento.clienteId,
         produtos: _produtos,
         valorTotal: valorFinal,

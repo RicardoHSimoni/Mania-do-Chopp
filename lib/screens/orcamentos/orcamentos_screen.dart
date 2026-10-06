@@ -101,6 +101,10 @@ class _OrcamentosScreenState extends State<OrcamentosScreen> {
                       ],
                     ),
                     const Divider(height: 24),
+                    _construirDetalhe(
+                      'Código do orçamento',
+                      orcamento.codigoFormatado,
+                    ),
                     if (orcamento.clienteId != null) ...[
                       _construirDetalhe(
                         'ID do Cliente',
@@ -336,6 +340,7 @@ class _OrcamentosScreenState extends State<OrcamentosScreen> {
                     },
                   ),
                   subtitle: Text(
+                    'Código ${orcamento.codigoFormatado} • '
                     '${_orcamentoService.getQuantidadeTotal(orcamento.produtos)} produto(s)'
                     '${orcamento.pedidoGerado ? ' • Pedido gerado' : ''}',
                   ),

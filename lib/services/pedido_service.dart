@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/pedido.dart';
 import '../services/recolha_service.dart';
+import 'codigo_service.dart';
 
 /// Lançada quando se tenta gerar um pedido para um orçamento que já
 /// possui um pedido gerado anteriormente.
@@ -26,7 +27,28 @@ class PedidoService {
 
   // Criar pedido
   Future<void> adicionarPedido(Pedido pedido) async {
-    await _firestore.collection(_collection).add(pedido.toMap());
+    final pedidoRef = _firestore.collection(_collection).doc();
+
+    await _firestore.runTransaction((transaction) async {
+      final codigo = await proximoCodigo(transaction, 'pedidos');
+      transaction.set(
+        pedidoRef,
+        Pedido(
+          id: pedidoRef.id,
+          codigo: codigo,
+          clienteId: pedido.clienteId,
+          orcamentoId: pedido.orcamentoId,
+          orcamentoCodigo: pedido.orcamentoCodigo,
+          dataEntrega: pedido.dataEntrega,
+          enderecoEntrega: pedido.enderecoEntrega,
+          observacoes: pedido.observacoes,
+          chopeirasSelecionadas: pedido.chopeirasSelecionadas,
+          valorTotal: pedido.valorTotal,
+          entregue: pedido.entregue,
+          pago: pedido.pago,
+        ).toMap(),
+      );
+    });
   }
 
   /// Cria um pedido vinculado a um orçamento garantindo, de forma atômica,
@@ -55,7 +77,24 @@ class PedidoService {
         throw PedidoJaGeradoException();
       }
 
-      transaction.set(pedidoRef, pedido.toMap());
+      final codigo = await proximoCodigo(transaction, 'pedidos');
+      transaction.set(
+        pedidoRef,
+        Pedido(
+          id: pedidoRef.id,
+          codigo: codigo,
+          clienteId: pedido.clienteId,
+          orcamentoId: pedido.orcamentoId,
+          orcamentoCodigo: pedido.orcamentoCodigo,
+          dataEntrega: pedido.dataEntrega,
+          enderecoEntrega: pedido.enderecoEntrega,
+          observacoes: pedido.observacoes,
+          chopeirasSelecionadas: pedido.chopeirasSelecionadas,
+          valorTotal: pedido.valorTotal,
+          entregue: pedido.entregue,
+          pago: pedido.pago,
+        ).toMap(),
+      );
       transaction.update(orcamentoRef, {'pedidoGerado': true});
     });
   }
@@ -146,5 +185,18 @@ class PedidoService {
     if (pedido.chopeirasSelecionadas?.isNotEmpty == true) {
       await _recolhaService.criarRecolha(pedido);
     }
+  }
+
+  // Buscar todos os pedidos de um cliente (mais recente primeiro)
+  Future<List<Pedido>> buscarPedidosPorCliente(String clienteId) async {
+    final snapshot = await _firestore
+        .collection(_collection)
+        .where('clienteId', isEqualTo: clienteId)
+        .orderBy('dataEntrega', descending: true)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => Pedido.fromMap(doc.data(), doc.id))
+        .toList();
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/cliente.dart';
 import '../../services/cliente_service.dart';
+import 'cliente_pedidos_screen.dart';
 
 class ClienteScreen extends StatefulWidget {
   const ClienteScreen({Key? key}) : super(key: key);
@@ -12,11 +13,36 @@ class ClienteScreen extends StatefulWidget {
 
 class _ClienteScreenState extends State<ClienteScreen> {
   late ClienteService _clienteService;
+  late final _clientesStream = _clienteService.listarClientes();
+  final TextEditingController _searchController = TextEditingController();
+  String _filtro = '';
 
   @override
   void initState() {
     super.initState();
     _clienteService = ClienteService();
+    _searchController.addListener(() {
+      setState(() {
+        _filtro = _searchController.text.trim().toLowerCase();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<Cliente> _filtrarClientes(List<Cliente> clientes) {
+    if (_filtro.isEmpty) return clientes;
+
+    return clientes.where((cliente) {
+      return cliente.nome.toLowerCase().contains(_filtro) ||
+          cliente.cpf.toLowerCase().contains(_filtro) ||
+          cliente.telefone.toLowerCase().contains(_filtro) ||
+          cliente.email.toLowerCase().contains(_filtro);
+    }).toList();
   }
 
   Future<void> _excluirCliente(BuildContext context, Cliente cliente) async {
@@ -127,31 +153,48 @@ class _ClienteScreenState extends State<ClienteScreen> {
                         cliente.observacao!.isNotEmpty)
                       _construirDetalhe('Observação', cliente.observacao!),
                     const SizedBox(height: 24),
-                    Row(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () => Navigator.pushNamed(
-                              context,
-                              '/clientes/cliente_update_screen',
-                              arguments:
-                                  cliente, // ✅ Passa o cliente como argumento
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () => Navigator.pushNamed(
+                                  context,
+                                  '/clientes/cliente_update_screen',
+                                  arguments: cliente,
+                                ),
+                                icon: const Icon(Icons.edit),
+                                label: const Text('Editar'),
+                              ),
                             ),
-                            icon: const Icon(Icons.edit),
-                            label: const Text('Editar'),
-                          ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () =>
+                                    _excluirCliente(context, cliente),
+                                icon: const Icon(Icons.delete),
+                                label: const Text('Excluir'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  foregroundColor: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () => _excluirCliente(context, cliente),
-                            icon: const Icon(Icons.delete),
-                            label: const Text('Excluir'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              foregroundColor: Colors.white,
+                        const SizedBox(height: 12),
+                        ElevatedButton.icon(
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  ClientePedidosScreen(cliente: cliente),
                             ),
                           ),
+                          icon: const Icon(Icons.history),
+                          label: const Text('Histórico de pedidos'),
                         ),
                       ],
                     ),
@@ -193,70 +236,104 @@ class _ClienteScreenState extends State<ClienteScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Clientes'), elevation: 0),
-      body: StreamBuilder<List<Cliente>>(
-        stream: _clienteService.listarClientes(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                'Erro ao carregar clientes: ${snapshot.error}',
-                textAlign: TextAlign.center,
-              ),
-            );
-          }
-
-          final clientes = snapshot.data ?? [];
-
-          if (clientes.isEmpty) {
-            return const Center(
-              child: Text(
-                'Nenhum cliente cadastrado',
-                style: TextStyle(fontSize: 16),
-              ),
-            );
-          }
-
-          // Pegar apenas os primeiros 10 clientes
-          final clientesPaginados = clientes.take(10).toList();
-
-          return ListView.builder(
-            itemCount: clientesPaginados.length,
-            itemBuilder: (context, index) {
-              final cliente = clientesPaginados[index];
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                child: ListTile(
-                  leading: const Icon(Icons.person),
-                  title: Text(cliente.nome),
-                  trailing: ElevatedButton.icon(
-                    onPressed: () => _exibirDetalhes(
-                      context,
-                      cliente,
-                      index,
-                      clientesPaginados.length,
-                      (novoIndice) {
-                        setState(() {});
-                        _exibirDetalhes(
-                          context,
-                          clientesPaginados[novoIndice],
-                          novoIndice,
-                          clientesPaginados.length,
-                          (idx) {},
-                        );
-                      },
-                    ),
-                    icon: const Icon(Icons.info_outline, size: 18),
-                    label: const Text('Detalhes'),
-                  ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Pesquisar por nome, CPF, telefone ou email',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchController.text.isEmpty
+                    ? null
+                    : IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: _searchController.clear,
+                      ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              );
-            },
-          );
-        },
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+              ),
+            ),
+          ),
+          Expanded(
+            child: StreamBuilder<List<Cliente>>(
+              stream: _clientesStream,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text(
+                      'Erro ao carregar clientes: ${snapshot.error}',
+                      textAlign: TextAlign.center,
+                    ),
+                  );
+                }
+
+                final clientes = snapshot.data ?? [];
+                if (clientes.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      'Nenhum cliente cadastrado',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  );
+                }
+
+                final clientesFiltrados = _filtrarClientes(clientes);
+                if (clientesFiltrados.isEmpty) {
+                  return const Center(
+                    child: Text('Nenhum cliente encontrado'),
+                  );
+                }
+
+                return ListView.builder(
+                  itemCount: clientesFiltrados.length,
+                  itemBuilder: (context, index) {
+                    final cliente = clientesFiltrados[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      child: ListTile(
+                        leading: const Icon(Icons.person),
+                        title: Text(cliente.nome),
+                        subtitle: Text(
+                          'CPF: ${cliente.cpf}\nTelefone: ${cliente.telefone}',
+                        ),
+                        trailing: ElevatedButton.icon(
+                          onPressed: () => _exibirDetalhes(
+                            context,
+                            cliente,
+                            index,
+                            clientesFiltrados.length,
+                            (novoIndice) {
+                              _exibirDetalhes(
+                                context,
+                                clientesFiltrados[novoIndice],
+                                novoIndice,
+                                clientesFiltrados.length,
+                                (indice) {},
+                              );
+                            },
+                          ),
+                          icon: const Icon(Icons.info_outline, size: 18),
+                          label: const Text('Detalhes'),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () =>

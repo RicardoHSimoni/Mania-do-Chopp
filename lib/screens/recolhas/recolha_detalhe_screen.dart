@@ -62,6 +62,7 @@ class _RecolhaDetalheScreenState extends State<RecolhaDetalheScreen> {
     final atualizado = Recolha(
       id: _recolha.id,
       pedidoId: _recolha.pedidoId,
+      pedidoCodigo: _recolha.pedidoCodigo,
       endereco: _recolha.endereco,
       dataRecolha: _recolha.dataRecolha,
       recolhida: valor,
@@ -86,6 +87,7 @@ class _RecolhaDetalheScreenState extends State<RecolhaDetalheScreen> {
     final atualizado = Recolha(
       id: _recolha.id,
       pedidoId: _recolha.pedidoId,
+      pedidoCodigo: _recolha.pedidoCodigo,
       endereco: _recolha.endereco,
       dataRecolha: novaData,
       recolhida: _recolha.recolhida,
@@ -98,6 +100,7 @@ class _RecolhaDetalheScreenState extends State<RecolhaDetalheScreen> {
     final atualizado = Recolha(
       id: _recolha.id,
       pedidoId: _recolha.pedidoId,
+      pedidoCodigo: _recolha.pedidoCodigo,
       endereco: _recolha.endereco,
       dataRecolha: _recolha.dataRecolha,
       recolhida: _recolha.recolhida,
@@ -121,7 +124,7 @@ class _RecolhaDetalheScreenState extends State<RecolhaDetalheScreen> {
                   ListTile(
                     leading: const Icon(Icons.receipt_long_outlined),
                     title: const Text('Pedido'),
-                    subtitle: Text(_recolha.pedidoId),
+                    subtitle: Text(_recolha.pedidoCodigoFormatado),
                   ),
                   ListTile(
                     leading: const Icon(Icons.location_on_outlined),

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mania_do_chopp/models/orcamento_item.dart';
 
 import '../models/orcamento.dart';
+import 'codigo_service.dart';
 
 class OrcamentoService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -10,18 +11,37 @@ class OrcamentoService {
 
   // Criar orçamento
   Future<Orcamento> adicionarOrcamento(Orcamento orcamento) async {
-    final docRef = await _firestore
-        .collection(_collection)
-        .add(orcamento.toMap());
+    final docRef = _firestore.collection(_collection).doc();
+    late int codigo;
+
+    await _firestore.runTransaction((transaction) async {
+      codigo = await proximoCodigo(transaction, 'orcamentos');
+      transaction.set(
+        docRef,
+        Orcamento(
+          id: docRef.id,
+          codigo: codigo,
+          clienteId: orcamento.clienteId,
+          produtos: orcamento.produtos,
+          valorTotal: orcamento.valorTotal,
+          dataCriacao: orcamento.dataCriacao,
+          desconto: orcamento.desconto,
+          observacao: orcamento.observacao,
+          pedidoGerado: orcamento.pedidoGerado,
+        ).toMap(),
+      );
+    });
 
     return Orcamento(
       id: docRef.id,
+      codigo: codigo,
       clienteId: orcamento.clienteId,
       produtos: orcamento.produtos,
       valorTotal: orcamento.valorTotal,
       dataCriacao: orcamento.dataCriacao,
       desconto: orcamento.desconto,
       observacao: orcamento.observacao,
+      pedidoGerado: orcamento.pedidoGerado,
     );
   }
 

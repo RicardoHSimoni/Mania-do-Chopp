@@ -4,6 +4,7 @@ import 'orcamento_item.dart';
 
 class Orcamento {
   final String id;
+  final int codigo;
   final String? clienteId; //opcional, pode ser null
   final List<OrcamentoItem> produtos;
   final double valorTotal;
@@ -14,6 +15,7 @@ class Orcamento {
 
   Orcamento({
     required this.id,
+    this.codigo = 0,
     this.clienteId,
     required this.produtos,
     required this.valorTotal,
@@ -23,8 +25,12 @@ class Orcamento {
     this.pedidoGerado = false,
   });
 
+  String get codigoFormatado =>
+      codigo > 0 ? codigo.toString().padLeft(6, '0') : 'Sem código';
+
   Map<String, dynamic> toMap() {
     return {
+      'codigo': codigo,
       'clienteId': clienteId,
       'produtos': produtos.map((produto) => produto.toMap()).toList(),
       'valorTotal': valorTotal,
@@ -48,6 +54,7 @@ class Orcamento {
 
     return Orcamento(
       id: id,
+      codigo: (map['codigo'] as num?)?.toInt() ?? 0,
       clienteId: map['clienteId'],
       produtos: (map['produtos'] as List<dynamic>? ?? [])
           .map((produtoMap) => OrcamentoItem.fromMap(produtoMap))

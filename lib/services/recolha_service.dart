@@ -48,6 +48,7 @@ class RecolhaService {
     final recolha = Recolha(
       id: '',
       pedidoId: pedido.id,
+      pedidoCodigo: pedido.codigo,
       endereco: pedido.enderecoEntrega,
       dataRecolha: pedido.dataEntrega.add(Duration(days: 7)),
       recolhida: false,

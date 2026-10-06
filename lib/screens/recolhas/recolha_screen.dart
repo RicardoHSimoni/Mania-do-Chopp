@@ -414,7 +414,7 @@ class _RecolhaCard extends StatelessWidget {
 
                             const SizedBox(height: 2),
 
-                            Text('Pedido ${recolha.pedidoId}'),
+                            Text('Pedido ${recolha.pedidoCodigoFormatado}'),
 
                             Text(recolha.endereco),
 

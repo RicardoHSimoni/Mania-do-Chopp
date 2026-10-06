@@ -194,6 +194,7 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
           id: '',
           clienteId: _selectedCliente!.id,
           orcamentoId: widget.orcamento.id,
+          orcamentoCodigo: widget.orcamento.codigo,
           dataEntrega: _dataEntrega,
           enderecoEntrega: _enderecoController.text.trim(),
           observacoes: _observacoesController.text.trim(),
@@ -303,7 +304,7 @@ class _PedidoFormScreenState extends State<PedidoFormScreen> {
               ),
             Card(
               child: ListTile(
-                title: Text('Orçamento ${widget.orcamento.id}'),
+                title: Text('Orçamento ${widget.orcamento.codigoFormatado}'),
                 subtitle: Text(
                   'Total: R\$ ${widget.orcamento.valorTotal.toStringAsFixed(2)}',
                 ),

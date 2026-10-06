@@ -448,7 +448,7 @@ class _PedidosScreenState extends State<PedidosScreen> {
                           style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(height: 4),
-                        Text('Orçamento: ${pedido.orcamentoId}'),
+                        Text('Orçamento: ${pedido.codigoOrcamentoFormatado}'),
                       ],
                     ),
                   ),
@@ -843,8 +843,10 @@ class _PedidoDetalheScreenState extends State<PedidoDetalheScreen> {
     final pedidoAnterior = _pedido;
     final pedidoAtualizado = Pedido(
       id: _pedido.id,
+      codigo: _pedido.codigo,
       clienteId: _pedido.clienteId,
       orcamentoId: _pedido.orcamentoId,
+      orcamentoCodigo: _pedido.orcamentoCodigo,
       dataEntrega: _pedido.dataEntrega,
       enderecoEntrega: _pedido.enderecoEntrega,
       observacoes: _pedido.observacoes,
@@ -941,11 +943,11 @@ class _PedidoDetalheScreenState extends State<PedidoDetalheScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Pedido ${_pedido.id}',
+                    'Pedido ${_pedido.codigoFormatado}',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 4),
-                  Text('Orçamento: ${_pedido.orcamentoId}'),
+                  Text('Orçamento: ${_pedido.codigoOrcamentoFormatado}'),
                 ],
               ),
             ),
