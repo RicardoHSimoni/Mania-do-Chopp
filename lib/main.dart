@@ -26,6 +26,9 @@ import 'screens/produtos/produto_form_screen.dart';
 import 'screens/produtos/produto_update_screen.dart';
 import 'screens/recolhas/recolha_screen.dart';
 
+import 'screens/chopeiras/chopeiras_screen.dart';
+import 'screens/chopeiras/chopeira_form_screen.dart';
+
 import 'package:mania_do_chopp/screens/compras/compra_form_screen.dart';
 
 Future<void> main() async {
@@ -118,6 +121,9 @@ class MyApp extends StatelessWidget {
           );
         },
         '/compras/compra_form_screen': (context) => const CompraFormScreen(),
+        '/chopeiras/chopeiras_screen': (context) => const ChopeirasScreen(),
+        '/chopeiras/chopeira_form_screen': (context) =>
+            const ChopeiraFormScreen(),
       },
     );
   }

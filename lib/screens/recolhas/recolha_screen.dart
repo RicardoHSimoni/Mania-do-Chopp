@@ -57,7 +57,7 @@ class _RecolhasPageState extends State<RecolhasPage> {
   final PedidoService _pedidoService = PedidoService();
   final ClienteService _clienteService = ClienteService();
 
-  RecolhaFiltros _filtros = const RecolhaFiltros();
+  late RecolhaFiltros _filtros;
 
   late final Stream<List<Recolha>> _recolhasStream;
 
@@ -75,6 +75,12 @@ class _RecolhasPageState extends State<RecolhasPage> {
   @override
   void initState() {
     super.initState();
+
+    final hoje = _soData(DateTime.now());
+    _filtros = RecolhaFiltros(
+      filtrarPorData: true,
+      periodo: DateTimeRange(start: hoje, end: DateTime(9999, 12, 31)),
+    );
 
     _recolhasStream = widget.recolhas != null
         ? Stream.value(widget.recolhas!)
@@ -181,7 +187,8 @@ class _RecolhasPageState extends State<RecolhasPage> {
         final d = _soData(r.dataRecolha);
 
         if (d.isBefore(_soData(f.periodo!.start)) ||
-            d.isAfter(_soData(f.periodo!.end))) {
+            (f.periodo!.end.year != 9999 &&
+                d.isAfter(_soData(f.periodo!.end)))) {
           return false;
         }
       }
@@ -478,12 +485,20 @@ class _FiltrosSheetState extends State<_FiltrosSheet> {
 
   Future<void> _escolherPeriodo() async {
     final agora = DateTime.now();
+    final ultimaData = DateTime(agora.year + 2);
+    final periodoAtual = _f.periodo;
+    final periodoInicial = periodoAtual == null
+        ? null
+        : DateTimeRange(
+            start: periodoAtual.start,
+            end: periodoAtual.end.year == 9999 ? ultimaData : periodoAtual.end,
+          );
 
     final periodo = await showDateRangePicker(
       context: context,
       firstDate: DateTime(agora.year - 2),
-      lastDate: DateTime(agora.year + 2),
-      initialDateRange: _f.periodo,
+      lastDate: ultimaData,
+      initialDateRange: periodoInicial,
       helpText: 'Selecione o período',
       saveText: 'Confirmar',
     );
@@ -566,6 +581,8 @@ class _FiltrosSheetState extends State<_FiltrosSheet> {
                   label: Text(
                     periodo == null
                         ? 'Selecionar período'
+                        : periodo.end.year == 9999
+                        ? 'A partir de ${_formatarData(periodo.start)}'
                         : '${_formatarData(periodo.start)} – '
                               '${_formatarData(periodo.end)}',
                   ),

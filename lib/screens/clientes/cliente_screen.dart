@@ -287,9 +287,7 @@ class _ClienteScreenState extends State<ClienteScreen> {
 
                 final clientesFiltrados = _filtrarClientes(clientes);
                 if (clientesFiltrados.isEmpty) {
-                  return const Center(
-                    child: Text('Nenhum cliente encontrado'),
-                  );
+                  return const Center(child: Text('Nenhum cliente encontrado'));
                 }
 
                 return ListView.builder(

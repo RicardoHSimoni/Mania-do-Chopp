@@ -8,6 +8,9 @@ import '../../services/pedido_service.dart';
 import '../../services/recolha_service.dart';
 import '../pedidos/pedidos_screen.dart' show PedidoDetalheScreen;
 import '../recolhas/recolha_detalhe_screen.dart';
+import '../../models/chopeira.dart';
+import '../../services/chopeira_service.dart';
+import '../chopeiras/chopeiras_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -115,6 +118,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.pushNamed(context, '/recolhas/recolha_screen');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.local_bar_outlined),
+                title: const Text('Chopeiras'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/chopeiras/chopeiras_screen');
                 },
               ),
             ],

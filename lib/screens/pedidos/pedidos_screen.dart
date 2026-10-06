@@ -11,6 +11,8 @@ import '../../services/cliente_service.dart';
 import '../../services/orcamento_service.dart';
 import '../../services/pedido_service.dart';
 import '../../services/recolha_service.dart';
+import '../orcamentos/orcamento_update_screen.dart';
+import 'pedido_update_screen.dart';
 
 class PedidosScreen extends StatefulWidget {
   const PedidosScreen({super.key});
@@ -633,8 +635,10 @@ class _PedidoDetalheScreenState extends State<PedidoDetalheScreen> {
   final _orcamentoService = OrcamentoService();
   final _chopeiraService = ChopeiraService();
   late Pedido _pedido;
-  late final Future<Orcamento?> _orcamentoFuture;
-  late final Future<Map<int, Chopeira>> _chopeirasFuture;
+  late Cliente? _cliente;
+  late Future<Orcamento?> _orcamentoFuture;
+  late Future<Map<int, Chopeira>> _chopeirasFuture;
+  final _clienteService = ClienteService();
 
   @override
   void initState() {
@@ -642,6 +646,7 @@ class _PedidoDetalheScreenState extends State<PedidoDetalheScreen> {
     _pedido = widget.pedido;
     _orcamentoFuture = _orcamentoService.buscarOrcamento(_pedido.orcamentoId);
     _chopeirasFuture = _carregarChopeiras();
+    _cliente = widget.cliente;
   }
 
   /// Retorna as chopeiras do pedido indexadas pelo código.
@@ -654,6 +659,54 @@ class _PedidoDetalheScreenState extends State<PedidoDetalheScreen> {
       for (final chopeira in todas)
         if (codigos.contains(chopeira.codigo)) chopeira.codigo: chopeira,
     };
+  }
+
+  // Callback usado pela tela de edição para mexer nos produtos do orçamento.
+  Future<void> _editarProdutosDoOrcamento() async {
+    final orcamento = await _orcamentoService.buscarOrcamento(
+      _pedido.orcamentoId,
+    );
+    if (orcamento == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Orçamento não encontrado.')),
+      );
+      return;
+    }
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => OrcamentoUpdateScreen(orcamento: orcamento),
+      ),
+    );
+  }
+
+  Future<void> _editarPedido() async {
+    final atualizado = await Navigator.of(context).push<Pedido>(
+      MaterialPageRoute(
+        builder: (_) => PedidoUpdateScreen(
+          pedido: _pedido,
+          cliente: _cliente,
+          onEditarOrcamento: _editarProdutosDoOrcamento,
+        ),
+      ),
+    );
+    if (atualizado == null || !mounted) return;
+
+    var cliente = _cliente;
+    if (atualizado.clienteId != _pedido.clienteId) {
+      cliente = await _clienteService.buscarCliente(atualizado.clienteId);
+    }
+    if (!mounted) return;
+
+    setState(() {
+      _pedido = atualizado;
+      _cliente = cliente;
+      _orcamentoFuture = _orcamentoService.buscarOrcamento(
+        atualizado.orcamentoId,
+      );
+      _chopeirasFuture = _carregarChopeiras();
+    });
   }
 
   String _moeda(double valor) => 'R\$ ${valor.toStringAsFixed(2)}';
@@ -927,6 +980,11 @@ class _PedidoDetalheScreenState extends State<PedidoDetalheScreen> {
         title: const Text('Detalhes do pedido'),
         actions: [
           IconButton(
+            tooltip: 'Editar pedido',
+            icon: const Icon(Icons.edit_outlined),
+            onPressed: _editarPedido,
+          ),
+          IconButton(
             tooltip: 'Excluir pedido',
             icon: const Icon(Icons.delete_outline),
             onPressed: _excluirPedido,
@@ -958,7 +1016,7 @@ class _PedidoDetalheScreenState extends State<PedidoDetalheScreen> {
               children: [
                 _campo(
                   'Cliente',
-                  widget.cliente?.nome ?? 'Cliente não encontrado',
+                  _cliente?.nome ?? 'Cliente não encontrado',
                   Icons.person_outline,
                 ),
                 _campo(
